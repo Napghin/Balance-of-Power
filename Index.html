@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Balance of Power - Meta v1.2</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Die Meta-Anzeige (Gesamtfortschritt) -->
+    <div id="meta-display" style="background: #222; color: white; padding: 10px; text-align: center;">
+        In den Äonen gesammelt: ✨ Hoffnung: <span id="meta-hoffnung">0</span> | 🩸 Blut: <span id="meta-blut">0</span>
+    </div>
+
+    <h1>Balance of Power</h1>
+    
+    <div id="game-container">
+        <div id="balance-bar-container">
+            <div id="zone-middle"></div>
+            <div id="pointer"></div>
+        </div>
+ 
+        <div class="ui-layout">
+            <div class="faction blue" id="gut">
+                <h2>Die Guten (Ritter)</h2>
+                <p id="res-gut">Glaube: 50</p>
+                <p id="work-gut">Arbeiter: 0</p>
+                <p>In diesem Zeitalter geschöpfte Hoffnung: 
+			<br> 
+			<span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
+			✨ <span id="run-hoffnung">0</span>
+			</span>
+		</p>
+                <button onclick="kaufeArbeiter('gut')">Arbeiter anwerben (40)</button>
+                <button onclick="spawnEinheit('gut')">Ritter entsenden (20)</button>
+            </div>
+
+            <div class="faction red" id="boese">
+                <h2>Die Bösen (Skelette)</h2>
+                <p id="res-boese">Furcht: 50</p>
+                <p id="work-boese">Sklaven: 0</p>
+                <p>In diesem Zeitalter vergossenes Blut:
+    			<br>
+    			<span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
+        		🩸 <span id="run-blut">0</span>
+   			 </span>
+		</p>
+                <button onclick="kaufeArbeiter('boese')">Sklaven treiben (60)</button>
+                <button onclick="spawnEinheit('boese')">Skelett beschwören (50)</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
