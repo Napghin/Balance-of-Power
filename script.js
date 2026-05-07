@@ -130,6 +130,9 @@ setInterval(() => {
     	rundeErtrag.hoffnung += kriegerGut * 0.5;
 	rundeErtrag.blut += kriegerBoese * 0.5;
 
+    //EINHEITEN BEWEGEN (Neu!)
+   	 bewegeEinheiten();
+
     // Balance berechnen
     	let chaos = (Math.random() - 0.5) * 0.1;
 	daten.balance += (auraDruckGut - auraDruckBoese + chaos);
@@ -220,5 +223,37 @@ function checkGameOver() {
     }
 }
 
+function bewegeEinheiten() {
+    // 1. GUT BEWEGEN (Rückwärts durchlaufen, damit sie nach rechts rücken)
+    for (let i = feldLaenge - 1; i >= 0; i--) {
+        for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
+            let einheit = schlachtfeld[i][j];
+            if (einheit.seite === 'gut' && i < feldLaenge - 1) {
+                let zielSlot = schlachtfeld[i + 1];
+                // Nur bewegen, wenn das nächste Feld komplett leer ist
+                if (zielSlot.length === 0) {
+                    schlachtfeld[i].splice(j, 1);
+                    zielSlot.push(einheit);
+                }
+            }
+        }
+    }
 
+    // 2. Boese BEWEGEN (Vorwärts durchlaufen, damit sie nach links rücken)
+    for (let i = 0; i < feldLaenge; i++) {
+        for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
+            let einheit = schlachtfeld[i][j];
+            if (einheit.seite === 'boese' && i > 0) {
+                let zielSlot = schlachtfeld[i - 1];
+                // Nur bewegen, wenn das nächste Feld komplett leer ist
+                if (zielSlot.length === 0) {
+                    schlachtfeld[i].splice(j, 1);
+                    zielSlot.push(einheit);
+                }
+            }
+        }
+    }
+}
+
+//Muss am Ende bleiben!
 aktualisiereButtonTexte()
