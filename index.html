@@ -19,6 +19,9 @@
             <div id="pointer"></div>
         </div>
  
+	<div id="battle-display" style="font-family: monospace; background: #333; color: #fff; padding: 10px; text-align: center; font-size: 20px; letter-spacing: 5px; margin: 20px 0;">
+    	</div>
+
         <div class="ui-layout">
             <div class="faction blue" id="gut">
                 <h2>Die Guten (Ritter)</h2>
@@ -31,7 +34,7 @@
 			</span>
 		</p>
                 <button onclick="kaufeArbeiter('gut')">Arbeiter anwerben (40)</button>
-                <button onclick="spawnEinheit('gut')">Ritter entsenden (20)</button>
+                <button id="btn-ritter" onclick="spawnEinheit('ritter')">Ritter entsenden (Lade...)</button>
             </div>
 
             <div class="faction red" id="boese">
@@ -45,7 +48,7 @@
    			 </span>
 		</p>
                 <button onclick="kaufeArbeiter('boese')">Sklaven treiben (60)</button>
-                <button onclick="spawnEinheit('boese')">Skelett beschwören (50)</button>
+                <button id="btn-skelett" onclick="spawnEinheit('skelett')">Skelett beschwören (Lade...)</button>
             </div>
         </div>
     </div>
