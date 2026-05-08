@@ -59,3 +59,33 @@ button {
     padding: 10px;
     cursor: pointer;
 }
+
+/* Das ist der Container für das ganze Schlachtfeld */
+#battle-display {
+    display: flex;            /* Macht die Slots zu Spalten nebeneinander */
+    justify-content: center;  /* Zentriert das Feld */
+    align-items: flex-end;    /* Einheiten stehen auf dem "Boden" */
+    gap: 4px;                 /* Kleiner Abstand zwischen den Feldern */
+    background-color: #1a1a1a;
+    padding: 20px;
+    border: 2px solid #444;
+    min-height: 120px;        /* Platz für 5 Einheiten + Puffer */
+    font-family: 'Courier New', monospace;
+}
+
+/* Das ist eine einzelne Spalte (ein Slot im Array) */
+.slot {
+    display: flex;
+    flex-direction: column;   /* Einheiten innerhalb der Spalte übereinander */
+    width: 25px;
+    background-color: #222;   /* Leicht grauer Hintergrund für den Slot */
+    border-radius: 3px;
+}
+
+/* Das Aussehen der einzelnen Einheit oder des Punktes */
+.einheit-punkt {
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    font-size: 16px;
+}
