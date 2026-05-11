@@ -25,20 +25,20 @@ let rundeErtrag = {
 // 3. BASIS-DATEN
 let daten = {
     gut: { 
-        res: 50, 
+        res: 100, 
         arbeiter: 0, 
         kostenArbeiter: 40, 
     },
     boese: { 
-        res: 50, 
+        res: 100, 
         arbeiter: 0, 
-        kostenArbeiter: 60, 
+        kostenArbeiter: 40, 
     },
     balance: 50 
 };
 
 // 4. SCHLACHTFELD-STRUKTUR
-let feldLaenge = 20;
+let feldLaenge = 22;
 let maxBreite = 1; 
 let schlachtfeld = [];
 
@@ -69,11 +69,30 @@ const einheitenStats = {
         setup: 0,           // Wartezeit nach jeder Bewegung, bevor Angriff möglich (Zielen)
         aoeBreit: 1,        // Wie viele Gegner IM selben Feld gleichzeitig getroffen werden
         aoeTief: 1,         // Wie viele Felder DAHINTER zusätzlich getroffen werden
-        moveWait: 1,        // Lauf-Pause: Wie viele Sekunden pro Schritt gewartet wird (0 = jede Sek.)
+        moveWait: 5,        // Lauf-Pause: Wie viele Sekunden pro Schritt gewartet wird (0 = jede Sek.)
         moveTimer: 0,       // Interner Zähler: Regelt die Lauf-Verzögerung
         crowdFactor: 2,     // Drängel-Strafe: Zusätzliche Sekunden-Pause beim Durchlaufen von Freunden
         auraDruck: 0.1,     // Wie stark die Einheit den "Balken" (Druck) in ihre Richtung schiebt
         position: 0         // Startposition auf dem Array
+    },
+    bogenschuetze: {
+        typ: 'B',           
+        seite: 'gut',
+        kosten: 50,         
+        hp: 6,              
+        masse: 1,
+        schaden: 3,         
+        reichweite: 4,      
+        as: 1,              
+        cooldown: 0,
+        setup: 2,           
+        aoeBreit: 1,
+        aoeTief: 1,
+        moveWait: 8,        
+        moveTimer: 0,
+        crowdFactor: 1,     
+        auraDruck: 0.05,    
+        position: 0
     },
     skelett: {
         typ: 'S',
@@ -88,12 +107,13 @@ const einheitenStats = {
         setup: 0,        
         aoeBreit: 1, 
         aoeTief: 1,      
-        moveWait: 0, 
+        moveWait: 3, 
         moveTimer: 0,
         crowdFactor: 1,
         auraDruck: 0.3,
         position: feldLaenge - 1
     }
+
 };
 
 // 6. Spawn Funktion
@@ -162,36 +182,66 @@ setInterval(() => {
 
 // 8. FUNKTIONEN
 function kaufeArbeiter(seite) {
-    let f = daten[seite];
-    if (f.res >= f.kostenArbeiter) {
-        f.res -= f.kostenArbeiter;
-        f.arbeiter++;
-        f.kostenArbeiter = Math.round(f.kostenArbeiter * 1.25);
+    let s = daten[seite];
+    if (s.res >= s.kostenArbeiter) {
+        s.res -= s.kostenArbeiter;
+        s.arbeiter++;
+        // Kosten steigen symmetrisch an
+        s.kostenArbeiter = Math.round(s.kostenArbeiter * 1.2); 
         updateUI();
     }
 }
 
 function updateUI() {
     // Ressourcen
-    document.getElementById('res-gut').innerText = "Glaube: " + Math.floor(daten.gut.res);
+	document.getElementById('res-gut').innerText = "Glaube: " + Math.floor(daten.gut.res) + " ✝️";
+	document.getElementById('res-boese').innerText = "Furcht: " + Math.floor(daten.boese.res) + " 💀";
+
+    //alt : document.getElementById('res-gut').innerText = "Glaube: " + Math.floor(daten.gut.res);
     document.getElementById('work-gut').innerText = "Arbeiter: " + daten.gut.arbeiter + " (Preis: " + daten.gut.kostenArbeiter + ")";
     
-
-    document.getElementById('res-boese').innerText = "Furcht: " + Math.floor(daten.boese.res);
+    //alt: document.getElementById('res-boese').innerText = "Furcht: " + Math.floor(daten.boese.res);
     document.getElementById('work-boese').innerText = "Sklaven: " + daten.boese.arbeiter + " (Preis: " + daten.boese.kostenArbeiter + ")";
+
+    // Arbeiter-Button GUT
+    const btnArbeitGut = document.getElementById('btn-arbeit-gut');
+    if (btnArbeitGut) {
+        btnArbeitGut.innerText = `Arbeiter anwerben (${daten.gut.kostenArbeiter})`;
+    }
+
+    // Arbeiter-Button BÖSE
+    const btnArbeitBoese = document.getElementById('btn-arbeit-boese');
+    if (btnArbeitBoese) {
+        btnArbeitBoese.innerText = `Sklaven treiben (${daten.boese.kostenArbeiter})`;
+    }
+
+    // --- KORRIGIERTER BEREICH: BALANCE-RUNEN & LICHT ---
+    const fillGut = document.getElementById('balance-fill-gut');
+    const fillBoese = document.getElementById('balance-fill-boese');
+
+    if (fillGut && fillBoese) {
+        // 1. Breite der Balken setzen
+        fillGut.style.width = daten.balance + "%";
+        fillBoese.style.width = (100 - daten.balance) + "%";
+
+        // 2. Licht für die gute Seite (Blau)
+        let intensityFactor = daten.balance / 100;
+        fillGut.style.setProperty('--intensity', intensityFactor.toFixed(2));
+
+        // 3. Finsternis für die böse Seite (Rot)
+        let darknessFactor = 1 - (daten.balance / 100);
+        fillBoese.style.setProperty('--darkness', darknessFactor.toFixed(2));
+    } 
     
-    // Einheiten
+    // Einheiten zählen
     let countGut = 0;
     let countBoese = 0;
     for (let fach of schlachtfeld) {
-    for (let einheit of fach) {
-        if (einheit.seite === 'gut') countGut++;
-        else countBoese++;
+        for (let einheit of fach) {
+            if (einheit.seite === 'gut') countGut++;
+            else countBoese++;
+        }
     }
-}
-	// Einheiten anzeigen
-        document.getElementById('gut').querySelector('h2').innerText = "Ritter: " + countGut;
-	document.getElementById('boese').querySelector('h2').innerText = "Skelette: " + countBoese;
 
     // Run-Ertrag Anzeige
     document.getElementById('run-hoffnung').innerText = Math.floor(rundeErtrag.hoffnung);
@@ -217,24 +267,32 @@ function updateUI() {
             punkt.className = 'einheit-punkt';
             
             if (schlachtfeld[i][ebene]) {
+                // Wenn eine Einheit auf dem Feld steht
                 let e = schlachtfeld[i][ebene];
                 punkt.innerText = e.typ;
-                // Farbe zuweisen
                 punkt.style.color = (e.seite === 'gut') ? '#55aaff' : '#ff5555';
                 punkt.style.fontWeight = "bold";
             } else {
-                punkt.innerText = ".";
-                punkt.style.color = "#444";
+                // Wenn das Feld LEER ist: Zonen-Markierungen setzen
+                if (i === 0) {
+                    // Spawn-Zone Gut (Feld 0)
+                    punkt.innerText = "•"; 
+                    punkt.style.color = "rgba(0, 116, 217, 0.7)"; // Dezent leuchtendes Blau
+                } else if (i === feldLaenge - 1) {
+                    // Spawn-Zone Böse (Feld 21)
+                    punkt.innerText = "•";
+                    punkt.style.color = "rgba(255, 65, 54, 0.7)"; // Dezent leuchtendes Rot
+                } else {
+                    // Normales, neutrales Schlachtfeld (Feld 1 bis 20)
+                    punkt.innerText = ".";
+                    punkt.style.color = "#444";
+                }
             }
             slotDiv.appendChild(punkt);
         }
         display.appendChild(slotDiv);
     }
-
-    // Balken bewegen
-    document.getElementById('pointer').style.left = daten.balance + "%";
 }
-
 
 function aktualisiereButtonTexte() {
     // Ritter-Button
@@ -244,6 +302,12 @@ function aktualisiereButtonTexte() {
     // Skelett-Button
     document.getElementById('btn-skelett').innerText = 
         `Skelett beschwören (${einheitenStats.skelett.kosten})`;
+
+    // Bogenschütze-Button
+    if(document.getElementById('btn-bogenschuetze')) {
+    document.getElementById('btn-bogenschuetze').innerText = 
+        `Bogenschütze entsenden (${einheitenStats.bogenschuetze.kosten})`;
+}
 }
 
 function checkGameOver() {
@@ -281,21 +345,35 @@ function bewegeEinheiten() {
         { seite: 'boese', zielMod: -1, start: 0, ende: feldLaenge - 1, schritt: 1 }
     ];
 
+    // 1. GLOBALE TIMER REDUZIEREN
+    for (let i = 0; i < feldLaenge; i++) {
+        for (let einheit of schlachtfeld[i]) {
+            if (einheit.moveTimer > 0) {
+                einheit.moveTimer--;
+            }
+        }
+    }
+
     for (let r of richtungen) {
         for (let i = r.start; r.schritt === -1 ? i >= r.ende : i <= r.ende; i += r.schritt) {
             for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
                 let einheit = schlachtfeld[i][j];
                 if (einheit.seite !== r.seite) continue;
 
-                // 1. SCAN: Ist ein Gegner in Reichweite?
+                // 2. SCAN: Ist ein Gegner in Reichweite? (Scannen in den Spawn ERLAUBT!)
                 let gegnerGefunden = false;
                 let gegnerSlotIndex = -1; 
 
-                for (let dist = 1; dist <= einheit.reichweite; dist++) {
+                // dist=0 erlaubt Kämpfe im selben Feld
+                for (let dist = 0; dist <= einheit.reichweite; dist++) {
                     let checkIdx = i + (dist * r.zielMod);
+                    
+                    // Wir scannen das komplette Feld (0 bis 21)
                     if (checkIdx >= 0 && checkIdx < feldLaenge) {
                         let zielSlot = schlachtfeld[checkIdx];
-                        if (zielSlot.length > 0 && zielSlot[0].seite !== einheit.seite) {
+                        
+                        let feindImSlot = zielSlot.some(andere => andere.seite !== einheit.seite);
+                        if (feindImSlot) {
                             gegnerGefunden = true;
                             gegnerSlotIndex = checkIdx; 
                             break; 
@@ -303,37 +381,48 @@ function bewegeEinheiten() {
                     }
                 }
 
-                // 2. ENTSCHEIDUNG: Kampf, Basis-Belagerung oder Laufen
+                // 3. ENTSCHEIDUNG: Kampf, Basis belagern oder Laufen
                 if (gegnerGefunden) {
+                    // SPANW-KILL PRIORITÄT / NORMALER KAMPF
                     angriff(einheit, gegnerSlotIndex);
                 } else {
-                    let amEnde = (einheit.seite === 'gut' && i === feldLaenge - 1) || 
-                                 (einheit.seite === 'boese' && i === 0);
+                    // NEU: Ist die gegnerische Basis in Reichweite?
+                    // Die gute Basis ist bei Index 0, die böse Basis bei feldLaenge - 1
+                    let distZurBasis = (einheit.seite === 'gut') ? ((feldLaenge - 1) - i) : (i - 0);
+                    let basisInReichweite = (distZurBasis <= einheit.reichweite);
 
-                    if (amEnde) {
-                        if (einheit.seite === 'gut') daten.balance += 5;
-                        else daten.balance -= 5;
-                        console.log(einheit.typ + " belagert die Basis!");
-                    } else {
-                        if (einheit.moveTimer > 0) {
-                            einheit.moveTimer--;
-                            continue;
+                    if (basisInReichweite) {
+                        // BASIS BELAGERN (Nah- und Fernkämpfer!)
+                        if (einheit.moveTimer <= 0) {
+                            // Balken verschieben
+                            if (einheit.seite === 'gut') daten.balance += 5;
+                            else daten.balance -= 5;
+                            
+                            console.log(einheit.typ + " beschießt/belagert die Basis aus " + distZurBasis + " Feldern Entfernung!");
+                            
+                            // Die Einheit bleibt stehen und lädt ihren Cooldown neu auf
+                            einheit.moveTimer = (einheit.moveWait || 0);
+                            if (einheit.setup) einheit.cooldown = einheit.setup;
                         }
+                    } else {
+                        // 4. BEWEGUNG (Nur wenn moveTimer auf 0 ist)
+                        if (einheit.moveTimer <= 0) {
+                            let zielIdx = i + r.zielMod;
+                            
+                            // Die Einheiten bewegen sich NUR im echten Schlachtfeld (Feld 1 bis 20)
+                            if (zielIdx >= 1 && zielIdx <= feldLaenge - 2) {
+                                let zielSlot = schlachtfeld[zielIdx];
+                                let istFeindBesetzt = zielSlot.length > 0 && zielSlot[0].seite !== einheit.seite;
 
-                        let zielIdx = i + r.zielMod;
-                        if (zielIdx >= 0 && zielIdx < feldLaenge) {
-                            let zielSlot = schlachtfeld[zielIdx];
-                            let istFreundBesetzt = zielSlot.length > 0 && zielSlot[0].seite === einheit.seite;
-                            let istFeindBesetzt = zielSlot.length > 0 && zielSlot[0].seite !== einheit.seite;
+                                // Wenn kein Feind da ist und Platz ist -> Laufen!
+                                if (!istFeindBesetzt && zielSlot.length < 5) {
+                                    schlachtfeld[i].splice(j, 1);
+                                    zielSlot.push(einheit);
 
-                            if (!istFeindBesetzt && zielSlot.length < 5) {
-                                schlachtfeld[i].splice(j, 1);
-                                zielSlot.push(einheit);
-
-                                let strafe = istFreundBesetzt ? (einheit.crowdFactor || 1) : 0;
-                                einheit.moveTimer = (einheit.moveWait || 0) + strafe;
-
-                                if (einheit.setup) einheit.cooldown = einheit.setup;
+                                    // Cooldown nach Bewegung zurücksetzen
+                                    einheit.moveTimer = (einheit.moveWait || 0);
+                                    if (einheit.setup) einheit.cooldown = einheit.setup;
+                                }
                             }
                         }
                     }
@@ -341,7 +430,7 @@ function bewegeEinheiten() {
             } // Ende der j-Schleife (Einheiten im Slot)
         } // Ende der i-Schleife (Slots auf dem Feld)
     } // Ende der r-Schleife (Gute/Böse Richtungen)
-} // Ende der Funktion bewegeEinheiten
+}
 
 //Angreifen
 function angriff(angreifer, zielSlotIndex) {

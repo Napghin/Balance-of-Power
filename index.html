@@ -2,29 +2,42 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Balance of Power - Meta v1.2</title>
+    <title>Balance of Power - Meta v1.3</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
 </head>
 <body>
+
+<header class="game-header">
+    <img src="title.png" alt="Battle for Balance Logo">
+</header>
+
     <!-- Die Meta-Anzeige (Gesamtfortschritt) -->
     <div id="meta-display" style="background: #222; color: white; padding: 10px; text-align: center;">
         In den Äonen gesammelt: ✨ Hoffnung: <span id="meta-hoffnung">0</span> | 🩸 Blut: <span id="meta-blut">0</span>
     </div>
-
-    <h1>Balance of Power</h1>
     
-    <div id="game-container">
-        <div id="balance-bar-container">
-            <div id="zone-middle"></div>
-            <div id="pointer"></div>
-        </div>
+<div id="game-container">
+    <div class="balance-title">Balance of Power</div>
+    
+    <div class="balance-runen-wrapper">
+        <img src="runen.png" class="runen-maske" alt="Runen">
+        <div id="balance-fill-gut" class="fill gut"></div>
+        <div id="balance-fill-boese" class="fill boese"></div>
+    </div>
  
-	<div id="battle-display" style="font-family: monospace; background: #333; color: #fff; padding: 10px; text-align: center; font-size: 20px; letter-spacing: 5px; margin: 20px 0;">
-    	</div>
+<div class="battle-wrapper">
+    <div class="visual-base base-gut"></div>
+    
+    <div id="battle-display" style="font-family: monospace; background: #333; color: #fff; padding: 10px; display: flex; overflow-x: auto; min-height: 120px;">
+        </div>
+    
+    <div class="visual-base base-boese"></div>
+</div>
 
         <div class="ui-layout">
             <div class="faction blue" id="gut">
-                <h2>Die Guten (Ritter)</h2>
+                <h2>Orden des Lichts</h2>
                 <p id="res-gut">Glaube: 50</p>
                 <p id="work-gut">Arbeiter: 0</p>
                 <p>In diesem Zeitalter geschöpfte Hoffnung: 
@@ -33,12 +46,13 @@
 			✨ <span id="run-hoffnung">0</span>
 			</span>
 		</p>
-                <button onclick="kaufeArbeiter('gut')">Arbeiter anwerben (40)</button>
+                <button id="btn-arbeit-gut" onclick="kaufeArbeiter('gut')">Arbeiter anwerben</button>
                 <button id="btn-ritter" onclick="spawnEinheit('ritter')">Ritter entsenden (Lade...)</button>
+		<button id="btn-bogenschuetze" onclick="spawnEinheit('bogenschuetze')">Bogenschütze (Lade...)</button>
             </div>
 
             <div class="faction red" id="boese">
-                <h2>Die Bösen (Skelette)</h2>
+                <h2>Horden der Finsternis</h2>
                 <p id="res-boese">Furcht: 50</p>
                 <p id="work-boese">Sklaven: 0</p>
                 <p>In diesem Zeitalter vergossenes Blut:
@@ -47,7 +61,7 @@
         		🩸 <span id="run-blut">0</span>
    			 </span>
 		</p>
-                <button onclick="kaufeArbeiter('boese')">Sklaven treiben (60)</button>
+                <button id="btn-arbeit-boese" onclick="kaufeArbeiter('boese')">Sklaven treiben</button>
                 <button id="btn-skelett" onclick="spawnEinheit('skelett')">Skelett beschwören (Lade...)</button>
             </div>
         </div>

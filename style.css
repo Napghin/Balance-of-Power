@@ -37,7 +37,7 @@ body {
     left: 40%;
 }
 
-/* Layout */
+/* --- UI LAYOUT & BOXEN --- */
 .ui-layout {
     display: flex;
     justify-content: space-between;
@@ -47,45 +47,217 @@ body {
     width: 45%;
     padding: 20px;
     border-radius: 10px;
+    /* Die Mittelalter-Schriftart für die ganzen Boxen */
+    font-family: 'MedievalSharp', cursive;
+    font-size: 1.1rem;
 }
+
+/* Hier steuerst du jetzt gezielt die Größe der Überschriften */
+.faction h2 {
+    font-size: 1.3rem; 
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.blue h2 { color: #3498db; } /* Blaues Leuchten für die Guten */
+.red h2 { color: #e74c3c; }  /* Rotes Leuchten für die Bösen */
 
 .blue { border: 2px solid #3498db; }
 .red { border: 2px solid #e74c3c; }
 
+/* --- DIE MAGISCHEN BUTTONS --- */
 button {
     display: block;
     width: 100%;
-    margin: 10px 0;
-    padding: 10px;
+    margin: 12px 0;
+    padding: 12px;
     cursor: pointer;
+    
+    /* MAGIE 2: Button-Grundgerüst (Transparenter Hintergrund, weiße Schrift) */
+    background-color: rgba(0, 0, 0, 0.4); 
+    color: #fff;
+    font-family: 'MedievalSharp', cursive;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border-radius: 6px;
+    transition: all 0.3s ease; /* Macht das Leuchten beim Hover weich */
 }
 
-/* Das ist der Container für das ganze Schlachtfeld */
+/* Die blauen Buttons (Gute Fraktion) */
+.blue button {
+    border: 1px solid #3498db;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.3), inset 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+.blue button:hover {
+    background-color: rgba(52, 152, 219, 0.2);
+    box-shadow: 0 0 20px rgba(52, 152, 219, 0.7), inset 0 0 10px rgba(52, 152, 219, 0.5);
+    text-shadow: 0 0 8px #fff;
+}
+
+/* Die roten Buttons (Böse Fraktion) */
+.red button {
+    border: 1px solid #e74c3c;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.3), inset 0 0 5px rgba(231, 76, 60, 0.3);
+}
+
+.red button:hover {
+    background-color: rgba(231, 76, 60, 0.2);
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.7), inset 0 0 10px rgba(231, 76, 60, 0.5);
+    text-shadow: 0 0 8px #fff;
+}
+
+/* --- SCHLACHTFELD --- */
 #battle-display {
-    display: flex;            /* Macht die Slots zu Spalten nebeneinander */
-    justify-content: center;  /* Zentriert das Feld */
-    align-items: flex-end;    /* Einheiten stehen auf dem "Boden" */
-    gap: 4px;                 /* Kleiner Abstand zwischen den Feldern */
+    display: flex;            
+    justify-content: center;  
+    align-items: flex-end;    
+    gap: 4px;                 
     background-color: #1a1a1a;
     padding: 20px;
     border: 2px solid #444;
-    min-height: 120px;        /* Platz für 5 Einheiten + Puffer */
+    min-height: 120px;        
     font-family: 'Courier New', monospace;
 }
 
-/* Das ist eine einzelne Spalte (ein Slot im Array) */
 .slot {
     display: flex;
-    flex-direction: column;   /* Einheiten innerhalb der Spalte übereinander */
+    flex-direction: column;   
     width: 25px;
-    background-color: #222;   /* Leicht grauer Hintergrund für den Slot */
+    background-color: #222;   
     border-radius: 3px;
 }
 
-/* Das Aussehen der einzelnen Einheit oder des Punktes */
 .einheit-punkt {
     height: 20px;
     line-height: 20px;
     text-align: center;
     font-size: 16px;
+}
+
+.game-header {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.game-header img {
+    max-width: 1000px; 
+    width: 90%;        
+    height: auto;      
+    border-radius: 8px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+}
+
+/* --- NEUE, KORRIGIERTE BALANCE BAR SEKTION --- */
+.balance-title {
+    font-family: 'MedievalSharp', cursive;
+    font-size: 2.2rem;
+    color: #e0ca82; 
+    text-align: center;
+    margin-top: 15px;       
+    margin-bottom: 10px;    
+    text-shadow: 3px 3px 8px #000;
+    letter-spacing: 3px;
+    text-transform: uppercase; 
+}
+
+.balance-runen-wrapper {
+    position: relative;
+    width: 90%;
+    max-width: 1000px;
+    height: 100px;         
+    margin: 0 auto 40px auto; 
+    background-color: #000; 
+    border: 3px solid #2a2a2a; 
+    box-shadow: 0 0 30px rgba(0,0,0,0.7);
+    overflow: hidden;
+}
+
+.fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    z-index: 1; 
+    transition: width 0.5s cubic-bezier(0.25, 0.1, 0.25, 1); 
+}
+
+.fill.gut {
+    left: 0;
+    width: 50%; 
+    --intensity: 0.5; 
+    background: linear-gradient(to right, #001f3f, #0074D9);
+    filter: brightness(calc(100% + (var(--intensity) * 80%))) 
+            contrast(calc(100% + (var(--intensity) * 50%)));
+    box-shadow: 
+        inset 0 0 calc(5px + (var(--intensity) * 15px)) rgba(255, 255, 255, calc(0.3 + (var(--intensity) * 0.4))),
+        0 0 calc(10px + (var(--intensity) * 20px)) rgba(0, 116, 217, calc(0.4 + (var(--intensity) * 0.4)));
+}
+
+.fill.boese {
+    right: 0;
+    width: 50%; 
+    --darkness: 0.5; 
+    background: linear-gradient(to left, #4a0000, #FF4136);
+    filter: brightness(calc(100% - (var(--darkness) * 70%)));
+    box-shadow: 
+        inset 0 0 10px rgba(0,0,0, calc(var(--darkness) * 0.8)),
+        0 0 15px rgba(255, 65, 54, calc(0.6 - (var(--darkness) * 0.5))); 
+}
+
+.runen-maske {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    object-fit: cover; 
+    mix-blend-mode: multiply; 
+    filter: brightness(1.2) contrast(1.4);
+    pointer-events: none; 
+}
+
+/* --- OPTIK FÜR DIE BASEN AM SCHLACHTFELD --- */
+.battle-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: stretch; 
+    margin: 30px auto;
+    width: 95%;
+    max-width: 1100px;
+    background-color: #333;     
+    border: 4px solid #555;     
+    border-radius: 15px;        
+    overflow: hidden;           
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.visual-base {
+    width: 110px;               
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+.base-gut {
+    background-image: url('burg.png');
+    box-shadow: inset -20px 0 30px rgba(0, 116, 217, 0.4); 
+    border-right: 1px solid #444; 
+}
+
+.base-boese {
+    background-image: url('nekropole.png');
+    box-shadow: inset 20px 0 30px rgba(255, 65, 54, 0.4);
+    border-left: 1px solid #444; 
+}
+
+#battle-display {
+    flex-grow: 1;               
+    background: #333;           
+    border: none !important;    
 }
