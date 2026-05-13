@@ -52,7 +52,7 @@ for (let i = 0; i < feldLaenge; i++) {
 function erstelleEinheit(name) {
     // Schaut im Katalog nach dem Namen (z.B. 'ritter') 
     // und gibt eine Kopie {...} davon zurück
-    return { ...einheitenStats[name] }; 
+    return { ...einheitenStats[name], maxHp: einheitenStats[name].hp }; 
 }
 
 const einheitenStats = {
@@ -69,7 +69,7 @@ const einheitenStats = {
         setup: 0,           // Wartezeit nach jeder Bewegung, bevor Angriff möglich (Zielen)
         aoeBreit: 1,        // Wie viele Gegner IM selben Feld gleichzeitig getroffen werden
         aoeTief: 1,         // Wie viele Felder DAHINTER zusätzlich getroffen werden
-        moveWait: 5,        // Lauf-Pause: Wie viele Sekunden pro Schritt gewartet wird (0 = jede Sek.)
+        moveWait: 4,        // Lauf-Pause: Wie viele Sekunden pro Schritt gewartet wird (0 = jede Sek.)
         moveTimer: 0,       // Interner Zähler: Regelt die Lauf-Verzögerung
         crowdFactor: 2,     // Drängel-Strafe: Zusätzliche Sekunden-Pause beim Durchlaufen von Freunden
         auraDruck: 0.1,     // Wie stark die Einheit den "Balken" (Druck) in ihre Richtung schiebt
@@ -88,7 +88,7 @@ const einheitenStats = {
         setup: 2,           
         aoeBreit: 1,
         aoeTief: 1,
-        moveWait: 8,        
+        moveWait: 5,        
         moveTimer: 0,
         crowdFactor: 1,     
         auraDruck: 0.05,    
@@ -107,10 +107,10 @@ const einheitenStats = {
         setup: 0,        
         aoeBreit: 1, 
         aoeTief: 1,      
-        moveWait: 3, 
+        moveWait: 2, 
         moveTimer: 0,
         crowdFactor: 1,
-        auraDruck: 0.3,
+        auraDruck: 0.15,
         position: feldLaenge - 1
     }
 
@@ -145,6 +145,7 @@ setInterval(() => {
 
     //EINHEITEN BEWEGEN 
    	 bewegeEinheiten();
+	 entferneToteEinheiten();
 
     // Ressourcen generieren
     daten.gut.res += (1 + daten.gut.arbeiter);
@@ -175,6 +176,7 @@ setInterval(() => {
     // Balance berechnen
     	let chaos = (Math.random() - 0.5) * 0.1;
 	daten.balance += (auraDruckGut - auraDruckBoese + chaos);
+
 
     updateUI();
     checkGameOver();
@@ -252,38 +254,47 @@ function updateUI() {
     document.getElementById('meta-blut').innerText = metaProgress.blutGesamt;
 
 
-    // SCHLACHTFELD Aktualisieren
+// SCHLACHTFELD Aktualisieren
     const display = document.getElementById('battle-display');
     display.innerHTML = ""; // Altes Feld löschen
 
     for (let i = 0; i < feldLaenge; i++) {
-        // Wir erstellen einen "Slot" (die Spalte)
         let slotDiv = document.createElement('div');
         slotDiv.className = 'slot';
 
-        // Wir loopen von oben nach unten (5 Plätze)
         for (let ebene = 4; ebene >= 0; ebene--) {
             let punkt = document.createElement('div');
             punkt.className = 'einheit-punkt';
             
             if (schlachtfeld[i][ebene]) {
-                // Wenn eine Einheit auf dem Feld steht
                 let e = schlachtfeld[i][ebene];
-                punkt.innerText = e.typ;
+
+                // --- 1. HIT FLASH CHECK ---
+                if (e.wurdeGetroffen) {
+                    punkt.classList.add('hit-flash'); 
+                    e.wurdeGetroffen = false; 
+                }
+
+                // --- 2. OPACITY (Transparenz) KORRIGIERT ---
+                // Wir nutzen jetzt e.maxHp, das wir in erstelleEinheit() hinzugefügt haben
+                let maxHp = e.maxHp || 10; 
+                let hpProzent = e.hp / maxHp;
+                if (isNaN(hpProzent) || hpProzent < 0) hpProzent = 0;
+                punkt.style.opacity = Math.max(0.25, hpProzent);
+
+                // --- 3. OPTIK DER EINHEIT ---
+                punkt.innerText = e.typ.charAt(0).toUpperCase(); 
                 punkt.style.color = (e.seite === 'gut') ? '#55aaff' : '#ff5555';
                 punkt.style.fontWeight = "bold";
+
             } else {
-                // Wenn das Feld LEER ist: Zonen-Markierungen setzen
                 if (i === 0) {
-                    // Spawn-Zone Gut (Feld 0)
                     punkt.innerText = "•"; 
-                    punkt.style.color = "rgba(0, 116, 217, 0.7)"; // Dezent leuchtendes Blau
+                    punkt.style.color = "rgba(0, 116, 217, 0.7)"; 
                 } else if (i === feldLaenge - 1) {
-                    // Spawn-Zone Böse (Feld 21)
                     punkt.innerText = "•";
-                    punkt.style.color = "rgba(255, 65, 54, 0.7)"; // Dezent leuchtendes Rot
+                    punkt.style.color = "rgba(255, 65, 54, 0.7)"; 
                 } else {
-                    // Normales, neutrales Schlachtfeld (Feld 1 bis 20)
                     punkt.innerText = ".";
                     punkt.style.color = "#444";
                 }
@@ -292,22 +303,37 @@ function updateUI() {
         }
         display.appendChild(slotDiv);
     }
-}
+
+    // --- BUTTONS AUSGRAUEN (Jetzt direkt ausgeführt!) ---
+    let btnRitter = document.getElementById('btn-ritter');
+    if (btnRitter) btnRitter.disabled = (daten.gut.res < einheitenStats.ritter.kosten);
+
+    let btnSkelett = document.getElementById('btn-skelett');
+    if (btnSkelett) btnSkelett.disabled = (daten.boese.res < einheitenStats.skelett.kosten);
+    
+    let btnBogen = document.getElementById('btn-bogenschuetze');
+    if (btnBogen) btnBogen.disabled = (daten.gut.res < einheitenStats.bogenschuetze.kosten);
+} 
+// <-- HIER ENDET updateUI()
+
 
 function aktualisiereButtonTexte() {
-    // Ritter-Button
-    document.getElementById('btn-ritter').innerText = 
-        `Ritter entsenden (${einheitenStats.ritter.kosten})`;
+    // Wir sprechen nur die SPAN-IDs an, nicht die Button-IDs!
+    
+    if(document.getElementById('txt-ritter')) {
+        document.getElementById('txt-ritter').innerText = 
+            `Ritter entsenden (${einheitenStats.ritter.kosten})`;
+    }
 
-    // Skelett-Button
-    document.getElementById('btn-skelett').innerText = 
-        `Skelett beschwören (${einheitenStats.skelett.kosten})`;
+    if(document.getElementById('txt-skelett')) {
+        document.getElementById('txt-skelett').innerText = 
+            `Skelett beschwören (${einheitenStats.skelett.kosten})`;
+    }
 
-    // Bogenschütze-Button
-    if(document.getElementById('btn-bogenschuetze')) {
-    document.getElementById('btn-bogenschuetze').innerText = 
-        `Bogenschütze entsenden (${einheitenStats.bogenschuetze.kosten})`;
-}
+    if(document.getElementById('txt-bogenschuetze')) {
+        document.getElementById('txt-bogenschuetze').innerText = 
+            `Bogenschütze entsenden (${einheitenStats.bogenschuetze.kosten})`;
+    }
 }
 
 function checkGameOver() {
@@ -459,15 +485,21 @@ function angriff(angreifer, zielSlotIndex) {
             for (let e = slot.length - 1; e >= 0; e--) {
                 let opfer = slot[e];
 
-                // Nur Gegner treffen!
+              // Nur Gegner treffen!
                 if (opfer.seite !== angreifer.seite) {
                     opfer.hp -= angreifer.schaden;
+                    
+                    // Feedback für den Spieler
+                    opfer.wurdeGetroffen = true; 
+                    zeigeSchaden(angreifer.schaden, aktuellerSlotIndex, angreifer.seite);
+                    
                     trefferZaehler++;
 
-                    // Prüfen, ob das Opfer stirbt
+                    // DAS HIER WURDE GEÄNDERT:
+                    // Wir prüfen zwar, ob er stirbt (für Logs etc.), 
+                    // aber wir löschen ihn NICHT mehr mit splice!
                     if (opfer.hp <= 0) {
-                        slot.splice(e, 1);
-                        console.log("Ein Gegner wurde vernichtet!");
+                        // console.log("Einheit hat den tödlichen Schlag kassiert, wehrt sich aber noch!");
                     }
 
                     // Wenn maximale Breite erreicht, im Slot aufhören
@@ -479,6 +511,55 @@ function angriff(angreifer, zielSlotIndex) {
 
     // 4. Cooldown nach dem (Flächen-)Angriff setzen
     angreifer.cooldown = angreifer.as;
+}
+
+function zeigeSchaden(schaden, slotIndex, angreiferSeite) {
+    const display = document.getElementById('battle-display');
+    const wrapper = document.querySelector('.battle-wrapper');
+    if (!display || !wrapper) return;
+    
+    const slots = display.getElementsByClassName('slot');
+    const zielSlot = slots[slotIndex];
+    if (!zielSlot) return; 
+
+    const rect = zielSlot.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+
+    const flText = document.createElement('div');
+    flText.innerText = "-" + Math.floor(schaden);
+    flText.className = 'schaden-text';
+    
+    // --- NEU: FARBE NACH FRAKTION ---
+    if (angreiferSeite === 'gut') {
+        flText.style.color = "#ffffff"; // Weiße Schrift...
+        flText.style.textShadow = "0px 0px 8px #55aaff, 2px 2px 0px black"; // ...mit blauem Leuchten!
+    } else {
+        flText.style.color = "#ffffff"; // Weiße Schrift...
+        flText.style.textShadow = "0px 0px 8px #ff5555, 2px 2px 0px black"; // ...mit rotem Leuchten!
+    }
+
+    flText.style.position = 'absolute';
+    flText.style.left = (rect.left - wrapperRect.left + (rect.width / 2) - 10) + 'px'; 
+    flText.style.top = (rect.top - wrapperRect.top - 5) + 'px'; 
+
+    wrapper.appendChild(flText);
+
+    setTimeout(() => {
+        if(flText.parentNode) flText.parentNode.removeChild(flText);
+    }, 1000);
+}
+
+function entferneToteEinheiten() {
+    // Wir gehen das komplette Schlachtfeld durch
+    for (let i = 0; i < feldLaenge; i++) {
+        // Rückwärts durch den Slot loopen (wichtig beim Löschen aus Arrays!)
+        for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
+            if (schlachtfeld[i][j].hp <= 0) {
+                // Jetzt erst wird die Einheit endgültig vom Feld genommen
+                schlachtfeld[i].splice(j, 1);
+            }
+        }
+    }
 }
 
 //Muss am Ende bleiben!

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Balance of Power - Meta v0.03</title>
-    <link rel="stylesheet" href="style.css?v=0.03">
+    <link rel="stylesheet" href="style.css?v=0.04">
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -47,8 +47,17 @@
 			</span>
 		</p>
                 <button id="btn-arbeit-gut" onclick="kaufeArbeiter('gut')">Arbeiter anwerben</button>
-                <button id="btn-ritter" onclick="spawnEinheit('ritter')">Ritter entsenden (Lade...)</button>
-		<button id="btn-bogenschuetze" onclick="spawnEinheit('bogenschuetze')">Bogenschütze (Lade...)</button>
+
+                <button id="btn-ritter" onclick="spawnEinheit('ritter')" class="unit-btn">
+    		<img src="icon-ritter.png" class="btn-icon" alt="">
+    		<span id="txt-ritter">Ritter entsenden (20)</span> <div class="tooltip">Ein tapferer Nahkämpfer mit viel Rüstung.</div>
+		</button>
+
+		<button id="btn-bogenschuetze" onclick="spawnEinheit('bogenschuetze')" class="unit-btn">
+    		<img src="icon-bogen.png" class="btn-icon" alt="">
+    		<span id="txt-bogenschuetze">Bogenschütze entsenden (Lade...)</span> <div class="tooltip">Fernkämpfer, der aus der Distanz angreift.</div>
+		</button>
+
             </div>
 
             <div class="faction red" id="boese">
@@ -62,12 +71,15 @@
    			 </span>
 		</p>
                 <button id="btn-arbeit-boese" onclick="kaufeArbeiter('boese')">Sklaven treiben</button>
-                <button id="btn-skelett" onclick="spawnEinheit('skelett')">Skelett beschwören (Lade...)</button>
+                <button id="btn-skelett" onclick="spawnEinheit('skelett')" class="unit-btn">
+    		<img src="icon-skelett.png" class="btn-icon" alt="">
+    		<span id="txt-skelett">Skelett beschwören (Lade...)</span> <div class="tooltip">Ein billiger Krieger, der in Massen gefährlich ist.</div>
+</button>
             </div>
         </div>
     </div>
 
-	<script src="script.js?v=0.03"></script>
+	<script src="script.js?v=0.04"></script>
 
 </body>
 </html>

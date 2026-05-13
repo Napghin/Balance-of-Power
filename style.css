@@ -233,6 +233,7 @@ button {
     border-radius: 15px;        
     overflow: hidden;           
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
 }
 
 .visual-base {
@@ -260,4 +261,86 @@ button {
     flex-grow: 1;               
     background: #333;           
     border: none !important;    
+}
+
+/* Container für den Button-Inhalt */
+.unit-btn {
+    position: relative; /* Wichtig für die Positionierung des Tooltips */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Das Icon im Button */
+.btn-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    transition: filter 0.3s ease;
+}
+
+/* WENN MAN SICH ETWAS NICHT LEISTEN KANN (JS muss 'disabled' setzen) */
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    border-color: #555 !important;
+    box-shadow: none !important;
+}
+
+button:disabled .btn-icon {
+    filter: grayscale(1) brightness(0.7); /* Das Icon wird grau und dunkel */
+}
+
+/* --- TOOLTIP LOGIK --- */
+.tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 120%; /* Erscheint über dem Button */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #e0ca82; /* Altgold */
+    padding: 8px 12px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    width: 180px;
+    font-size: 0.85rem;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* Tooltip anzeigen, wenn man über den Button hovert */
+button:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* --- KAMPF-FEEDBACK --- */
+
+/* 1. Das weiße Aufblitzen beim Treffer */
+@keyframes hitFlash {
+    0% { background-color: white; color: black; transform: scale(1.3); }
+    100% { background-color: transparent; transform: scale(1); }
+}
+
+.hit-flash {
+    animation: hitFlash 0.2s ease-out; /* Sehr kurzes, knackiges Blinken */
+}
+
+/* 2. Der schwebende Schadens-Text */
+.schaden-text {
+    position: absolute;
+    font-family: 'MedievalSharp', cursive;
+    font-size: 1.2rem;
+    pointer-events: none; /* Klicks gehen durch */
+    z-index: 60;
+    animation: floatUp 0.8s ease-out forwards;
+}
+
+@keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    50% { transform: translateY(-25px) scale(1.3); }
+    100% { opacity: 0; transform: translateY(-40px) scale(1); }
 }
