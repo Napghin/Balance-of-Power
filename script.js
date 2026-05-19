@@ -60,7 +60,7 @@ const einheitenStats = {
         typ: 'R',           // Das Symbol auf dem Spielfeld (Buchstabe)
         seite: 'gut',       // Bestimmt die Marschrichtung (gut = rechts, boese = links)
         kosten: 20,         // Wie viel Gold/Glaube beim Spawnen abgezogen wird
-        hp: 12,             // Lebenspunkte (bei 0 wird die Einheit gelöscht)
+        hp: 20,             // Lebenspunkte (bei 0 wird die Einheit gelöscht)
         masse: 2,           // Gewicht für die Frontlinie (wichtig fürs spätere Schieben)
         schaden: 5,         // Wie viel HP dem Gegner pro Treffer abgezogen werden
         reichweite: 1,      // 1 = Nahkampf, 2+ = Fernkampf (Scan-Distanz in Feldern)
@@ -74,7 +74,7 @@ const einheitenStats = {
         crowdFactor: 2,     // Drängel-Strafe: Zusätzliche Sekunden-Pause beim Durchlaufen von Freunden
         auraDruck: 0,       // Wie stark die Einheit den "Balken" (Druck) in ihre Richtung schiebt
         position: 0,        // Startposition auf dem Array
-	einkommen: 1,	    // Erzeugtes Einkommen
+	einkommen: 0.5,	    // Erzeugtes Einkommen
 	metaWert: 2	    //erzeugtes Blut/Hoffnunf
     },
     bogenschuetze: {
@@ -95,14 +95,14 @@ const einheitenStats = {
         crowdFactor: 1,     
         auraDruck: 0,    
         position: 0,
-	einkommen: 1,
+	einkommen: 0.5,
 	metaWert: 2
     },
     skelett: {
         typ: 'S',
         seite: 'boese',
         kosten: 40,
-        hp: 8,
+        hp: 22,
         masse: 1,
         schaden: 6,
         reichweite: 1,
@@ -116,7 +116,7 @@ const einheitenStats = {
         crowdFactor: 1,
         auraDruck: 0,
         position: feldLaenge - 1,
-	einkommen: 1,
+	einkommen: 0.5,
 	metaWert: 2
     }
 
@@ -155,17 +155,16 @@ for (let i = 0; i < 5; i++) {
 
 // 7. SPIEL-MOTOR
 setInterval(() => {
-    // 1. Kämpfen und Bewegen
+    // 1. BEWEGUNG, KAMPF & PHYSIK
+    // Alles ist jetzt in einer Funktion vereint, das ist die "Single Source of Truth"
     bewegeEinheiten();
     
-    // 2. Tote vom Feld räumen (und Meta-Ressourcen generieren)
+    // 2. Tote entfernen
     entferneToteEinheiten();
 
-    // 3. Wirtschaft & Balance 
+    // 3. Wirtschaft & UI
     generiereEinkommen();
-    berechneFrontlinie(); // Hier ist die Aura jetzt integriert!
-
-    // 4. Grafik & Spielende
+    berechneFrontlinie(); 
     updateUI();
     checkGameOver();
 }, 1000);
@@ -330,99 +329,96 @@ function checkGameOver() {
 }
 
 function bewegeEinheiten() {
+    // 1. GLOBALE TIMER REDUZIEREN
+    for (let i = 0; i < feldLaenge; i++) {
+        for (let einheit of schlachtfeld[i]) {
+            if (einheit.moveTimer > 0) einheit.moveTimer--;
+        }
+    }
+
     const richtungen = [
         { seite: 'gut', zielMod: 1, start: feldLaenge - 1, ende: 0, schritt: -1 },
         { seite: 'boese', zielMod: -1, start: 0, ende: feldLaenge - 1, schritt: 1 }
     ];
 
-    // 1. GLOBALE TIMER REDUZIEREN
-    for (let i = 0; i < feldLaenge; i++) {
-        for (let einheit of schlachtfeld[i]) {
-            if (einheit.moveTimer > 0) {
-                einheit.moveTimer--;
-            }
-        }
-    }
+    // --- MASSE-VORTEIL KONFIGURATION ---
+    const SCHUB_SCHWELLE = 1.33; 
 
     for (let r of richtungen) {
+        // Schleife über alle Slots
         for (let i = r.start; r.schritt === -1 ? i >= r.ende : i <= r.ende; i += r.schritt) {
+            
+            // Schleife über die Einheiten im Slot
             for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
                 let einheit = schlachtfeld[i][j];
-                if (einheit.seite !== r.seite) continue;
+                
+                if (einheit.seite !== r.seite || einheit.moveTimer > 0) continue;
 
-                // 2. SCAN: Ist ein Gegner in Reichweite? (Scannen in den Spawn ERLAUBT!)
+                // --- 2. KAMPF-SCAN ---
                 let gegnerGefunden = false;
-                let gegnerSlotIndex = -1; 
-
-                // dist=0 erlaubt Kämpfe im selben Feld
+                let gegnerSlotIndex = -1;
                 for (let dist = 0; dist <= einheit.reichweite; dist++) {
                     let checkIdx = i + (dist * r.zielMod);
-                    
-                    // Wir scannen das komplette Feld (0 bis 21)
-                    if (checkIdx >= 0 && checkIdx < feldLaenge) {
-                        let zielSlot = schlachtfeld[checkIdx];
-                        
-                        let feindImSlot = zielSlot.some(andere => andere.seite !== einheit.seite);
-                        if (feindImSlot) {
-                            gegnerGefunden = true;
-                            gegnerSlotIndex = checkIdx; 
-                            break; 
-                        }
+                    if (checkIdx >= 0 && checkIdx < feldLaenge && 
+                        schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0)) {
+                        gegnerGefunden = true;
+                        gegnerSlotIndex = checkIdx;
+                        break;
                     }
                 }
 
-                // 3. ENTSCHEIDUNG: Kampf, Basis belagern oder Laufen
+                // Zuschlagen oder Basis belagern
                 if (gegnerGefunden) {
-                    // SPANW-KILL PRIORITÄT / NORMALER KAMPF
                     angriff(einheit, gegnerSlotIndex);
                 } else {
-                    // NEU: Ist die gegnerische Basis in Reichweite?
-                    // Die gute Basis ist bei Index 0, die böse Basis bei feldLaenge - 1
                     let distZurBasis = (einheit.seite === 'gut') ? ((feldLaenge - 1) - i) : (i - 0);
-                    let basisInReichweite = (distZurBasis <= einheit.reichweite);
-
-                    if (basisInReichweite) {
-                        // BASIS ANGREIFEN (Nah- und Fernkämpfer!)
-                        if (einheit.moveTimer <= 0) {
-                            
-                            // NEU: Echter Schaden an der Basis!
-                            if (einheit.seite === 'gut') {
-                                daten.boese.hp -= einheit.schaden;
-                            } else {
-                                daten.gut.hp -= einheit.schaden;
-                            }
-                            
-                            // Die Einheit bleibt stehen und lädt ihren Cooldown neu auf
-                            einheit.moveTimer = (einheit.moveWait || 0);
-                            if (einheit.setup) einheit.cooldown = einheit.setup;
-                        }
-                    } else {
-                        // 4. BEWEGUNG (Nur wenn moveTimer auf 0 ist)
-                        if (einheit.moveTimer <= 0) {
-                            let zielIdx = i + r.zielMod;
-                            
-                            // Die Einheiten bewegen sich NUR im echten Schlachtfeld (Feld 1 bis 20)
-                            if (zielIdx >= 1 && zielIdx <= feldLaenge - 2) {
-                                let zielSlot = schlachtfeld[zielIdx];
-                                let istFeindBesetzt = zielSlot.length > 0 && zielSlot[0].seite !== einheit.seite;
-
-                                // Wenn kein Feind da ist und Platz ist -> Laufen!
-                                if (!istFeindBesetzt && zielSlot.length < 5) {
-                                    schlachtfeld[i].splice(j, 1);
-                                    zielSlot.push(einheit);
-
-                                    // Cooldown nach Bewegung zurücksetzen
-                                    einheit.moveTimer = (einheit.moveWait || 0);
-                                    if (einheit.setup) einheit.cooldown = einheit.setup;
-                                }
-                            }
-                        }
+                    if (distZurBasis <= einheit.reichweite) {
+                        // Schaden an der Basis
+                        if (einheit.seite === 'gut') daten.boese.hp -= einheit.schaden;
+                        else daten.gut.hp -= einheit.schaden;
+                        
+                        einheit.moveTimer = (einheit.moveWait || 2);
+                        if (einheit.setup) einheit.cooldown = einheit.setup;
+                        continue; 
                     }
                 }
-            } // Ende der j-Schleife (Einheiten im Slot)
-        } // Ende der i-Schleife (Slots auf dem Feld)
-    } // Ende der r-Schleife (Gute/Böse Richtungen)
+
+                // --- 3. BEWEGUNG & PHYSIK-INTEGRATION ---
+                let zielIdx = i + r.zielMod;
+                
+                // ARCHITEKTUR-FIX: Einheiten dürfen sich NUR im Bereich 1 bis (feldLaenge - 2) frei bewegen!
+                // Feld 0 (Gute Basis) und Feld 21 (Böse Basis) sind für reguläre Schritte tabu.
+                if (zielIdx >= 1 && zielIdx <= feldLaenge - 2) {
+                    let zielSlot = schlachtfeld[zielIdx];
+                    let feindImZiel = zielSlot.some(e => e.seite !== einheit.seite && e.hp > 0);
+
+                    if (feindImZiel) {
+                        // KOLLISION!
+                        let masseEigene = schlachtfeld[i].filter(e => e.seite === einheit.seite).reduce((sum, e) => sum + (e.masse || 1), 0);
+                        let masseFeind = zielSlot.filter(e => e.seite !== einheit.seite).reduce((sum, e) => sum + (e.masse || 1), 0);
+                        
+                        if (masseEigene >= (masseFeind * SCHUB_SCHWELLE)) {
+                            // SCHUBSEN!
+                            dominoSchieben(zielIdx, r.zielMod);
+                            
+                            schlachtfeld[i].splice(j, 1);
+                            zielSlot.push(einheit);
+                            einheit.moveTimer = (einheit.moveWait || 2);
+                        } else {
+                            einheit.moveTimer = 1; 
+                        }
+                    } else if (zielSlot.length < 5) {
+                        // FREI: Bewegen erlaubt, da zielIdx garantiert im erlaubten Bereich liegt
+                        schlachtfeld[i].splice(j, 1);
+                        zielSlot.push(einheit);
+                        einheit.moveTimer = (einheit.moveWait || 2);
+                    }
+                }
+            } // Ende j
+        } // Ende i
+    } // Ende r
 }
+
 
 //Angreifen
 function angriff(angreifer, zielSlotIndex) {
@@ -451,8 +447,8 @@ function angriff(angreifer, zielSlotIndex) {
             for (let e = slot.length - 1; e >= 0; e--) {
                 let opfer = slot[e];
 
-              // Nur Gegner treffen!
-                if (opfer.seite !== angreifer.seite) {
+              // Nur Gegner treffen, die auch am Leben sind
+                if (opfer.seite !== angreifer.seite && opfer.hp > 0) {
                     opfer.hp -= angreifer.schaden;
                     
                     // Feedback für den Spieler
@@ -495,7 +491,6 @@ function zeigeSchaden(schaden, slotIndex, angreiferSeite, ebene) {
     flText.innerText = "-" + Math.floor(schaden);
     flText.className = 'schaden-text';
     
-    // Farbe und Schatten (wie gehabt)
     if (angreiferSeite === 'gut') {
         flText.style.color = "#ffffff";
         flText.style.textShadow = "0px 0px 8px #55aaff, 2px 2px 0px black";
@@ -505,17 +500,18 @@ function zeigeSchaden(schaden, slotIndex, angreiferSeite, ebene) {
     }
 
     flText.style.position = 'absolute';
-    flText.style.left = (rect.left - wrapperRect.left + (rect.width / 2) - 10) + 'px'; 
+    
+    // --- NEU: ZUFÄLLIGE STREUUNG (Scatter) ---
+    // Erzeugt einen Wert zwischen -15 und +15 Pixeln
+    let randomX = Math.floor(Math.random() * 30) - 15; 
+    let randomY = Math.floor(Math.random() * 30) - 15;
 
-    // --- NEU: DIE HÖHENBERECHNUNG ---
-    // Ein Slot ist ca. 120-150px hoch. Wir wissen, dass die Einheiten ca. 25px hoch sind.
-    // Wir starten unten im Slot und ziehen pro Ebene Pixel ab, um höher zu kommen.
-    // Falls 'ebene' nicht mitgeliefert wurde (undefined), nehmen wir standardmäßig 2 (die Mitte).
+    flText.style.left = (rect.left - wrapperRect.left + (rect.width / 2) - 10 + randomX) + 'px'; 
+
     let ebenenOffset = (ebene !== undefined) ? (ebene * 24) : 48; 
     
-    // Wir berechnen den Startpunkt: (Unten am Slot) minus (Höhe der Ebene)
-    // Die +10 oder -10 musst du evtl. kurz testen, je nachdem wie dein CSS-Layout genau sitzt.
-    flText.style.top = (rect.bottom - wrapperRect.top - ebenenOffset - 35) + 'px'; 
+    // Die Streuung auch auf die Höhe anrechnen
+    flText.style.top = (rect.bottom - wrapperRect.top - ebenenOffset - 35 + randomY) + 'px'; 
 
     wrapper.appendChild(flText);
 
@@ -613,6 +609,28 @@ function berechneFrontlinie() {
     daten.balance = Math.max(0, Math.min(100, neueBalance)); 
 }
 
+
+// Hilfsfunktion: Schiebt eine Kette von Gegnern weg
+function dominoSchieben(idx, richtung) {
+    let zielIdx = idx + richtung;
+    if (zielIdx < 0 || zielIdx >= feldLaenge) return; // In Basis zerquetschen
+
+    // Schiebe alle Einheiten im aktuellen Slot einen weiter
+    let einheiten = schlachtfeld[idx].splice(0);
+    
+    // Domino: Wenn der Ziel-Slot voll ist, schiebe die dortigen Einheiten weiter
+    if (schlachtfeld[zielIdx].length > 0) {
+        dominoSchieben(zielIdx, richtung);
+    }
+    
+    // Einheiten in den neuen Slot schieben
+    schlachtfeld[zielIdx].push(...einheiten);
+    
+    // Prüfe auf "Zerquetschen" (Basis-Check)
+    einheiten.forEach(e => {
+        if (zielIdx === 0 || zielIdx === feldLaenge - 1) e.hp = 0;
+    });
+}
 
 //Muss am Ende bleiben!
 aktualisiereButtonTexte()
