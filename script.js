@@ -16,25 +16,43 @@ try {
     console.error("Speicher-Fehler ignoriert: Browser-Datenbank ist korrupt.");
 }
 
-// 2. AKTUELLE RUNDE
+// 2. AKTUELLE RUNDE & PRODUKTION PROGRESS
 let rundeErtrag = {
     hoffnung: 0,
     blut: 0
+};
+
+// NEU: Hier wird der aktuelle Fortschritt ("Brutzeit") der Einheiten gespeichert
+let produktionProgress = {
+    ritter: 0,
+    bogenschuetze: 0,
+    skelett: 0
 };
 
 // 3. BASIS-DATEN
 let daten = {
     gut: { 
         res: 100, 
-        hp: 100,      // NEU: Leben der Licht-Basis
-        maxHp: 100 
+        hp: 100,      
+        maxHp: 100,
+        // NEU: Anzahl der gebauten Kasernen für das Licht
+        kasernen: {
+            ritter: 0,
+            bogenschuetze: 0
+        },
+        aktuelleMasse: 0 // NEU: Für deine UI-Anzeige
     },
     boese: { 
         res: 100, 
-        hp: 100,      // NEU: Leben der Finsternis-Basis
-        maxHp: 100 
+        hp: 100,      
+        maxHp: 100,
+        // NEU: Anzahl der gebauten Kasernen für die Finsternis
+        kasernen: {
+            skelett: 0
+        },
+        aktuelleMasse: 0 // NEU: Für deine UI-Anzeige
     },
-    balance: 50       // Bleibt vorerst drin, falls du den Balken optisch noch nutzen willst
+    balance: 50  
 };
 
 // 4. SCHLACHTFELD-STRUKTUR
@@ -74,8 +92,9 @@ const einheitenStats = {
         crowdFactor: 2,     // Drängel-Strafe: Zusätzliche Sekunden-Pause beim Durchlaufen von Freunden
         auraDruck: 0,       // Wie stark die Einheit den "Balken" (Druck) in ihre Richtung schiebt
         position: 0,        // Startposition auf dem Array
-	einkommen: 0.5,	    // Erzeugtes Einkommen
-	metaWert: 2	    //erzeugtes Blut/Hoffnunf
+	    einkommen: 0.5,	    // Erzeugtes Einkommen
+	    metaWert: 2,	    //erzeugtes Blut/Hoffnung
+        spawnRate: 0.05 // NEU: 0.05 bedeutet 5% pro Sekunde = 20 Sekunden für 1 Ritter
     },
     bogenschuetze: {
         typ: 'B',           
@@ -95,8 +114,10 @@ const einheitenStats = {
         crowdFactor: 1,     
         auraDruck: 0,    
         position: 0,
-	einkommen: 0.5,
-	metaWert: 2
+	    einkommen: 0.5,
+	    metaWert: 2,
+        spawnRate: 0.03
+
     },
     skelett: {
         typ: 'S',
@@ -116,33 +137,43 @@ const einheitenStats = {
         crowdFactor: 1,
         auraDruck: 0,
         position: feldLaenge - 1,
-	einkommen: 0.5,
-	metaWert: 2
+	    einkommen: 0.5,
+	    metaWert: 2,
+        spawnRate: 0.07
+    
     }
 
 };
 
-// 6. Spawn Funktion
-
-function spawnEinheit(name) {
+// 6. Produktionsebäude-Kauf Funktion / Spawn mechanic
+function kaufeKaserne(name) {
     let stats = einheitenStats[name];
-    let seite = stats.seite; // 'gut' oder 'boese'
+    let seite = stats.seite; 
     let konto = daten[seite];
 
+    // Kosten bleiben gleich (Ritter Kaserne kostet so viel wie ein Ritter vorher)
     if (konto.res >= stats.kosten) {
         konto.res -= stats.kosten;
         
-        let neueEinheit = erstelleEinheit(name);
-        
-        if (seite === 'gut') {
-            schlachtfeld[0].push(neueEinheit);
-        } else {
-            schlachtfeld[feldLaenge - 1].push(neueEinheit);
-        }
+        // Kaserne im Inventar hochzählen
+        konto.kasernen[name]++;
         
         updateUI();
     } else {
-        console.log("Nicht genug Ressourcen!");
+        console.log("Nicht genug Ressourcen für eine Kaserne!");
+    }
+}
+
+// Hilfsfunktion: Wird von der Engine aufgerufen, wenn der Balken voll ist
+function autoSpawnEinheit(name) {
+    let stats = einheitenStats[name];
+    let seite = stats.seite;
+    let neueEinheit = erstelleEinheit(name);
+    
+    if (seite === 'gut') {
+        schlachtfeld[0].push(neueEinheit);
+    } else {
+        schlachtfeld[feldLaenge - 1].push(neueEinheit);
     }
 }
 
@@ -156,13 +187,15 @@ for (let i = 0; i < 5; i++) {
 // 7. SPIEL-MOTOR
 setInterval(() => {
     // 1. BEWEGUNG, KAMPF & PHYSIK
-    // Alles ist jetzt in einer Funktion vereint, das ist die "Single Source of Truth"
     bewegeEinheiten();
     
-    // 2. Tote entfernen
+    // 2. NEU: Kasernen ticken lassen und Einheiten im Hintergrund ausbrüten
+    verarbeiteKasernenProduktion();
+    
+    // 3. Tote entfernen
     entferneToteEinheiten();
 
-    // 3. Wirtschaft & UI
+    // 4. Wirtschaft & Balance
     generiereEinkommen();
     berechneFrontlinie(); 
     updateUI();
@@ -277,6 +310,31 @@ function updateUI() {
     const visualBaseBoese = document.querySelector('.base-boese');
     if (visualBaseGut) visualBaseGut.innerText = daten.gut.hp + " / " + daten.gut.maxHp;
     if (visualBaseBoese) visualBaseBoese.innerText = daten.boese.hp + " / " + daten.boese.maxHp;
+
+// --- Debug-Anzeigen ---
+    if(document.getElementById('masse-gut')) {
+    document.getElementById('masse-gut').innerText = "Armee-Gewicht: " + daten.gut.aktuelleMasse;
+    }
+    if(document.getElementById('masse-boese')) {
+    document.getElementById('masse-boese').innerText = "Armee-Gewicht: " + daten.boese.aktuelleMasse;
+    }
+
+// --- ANZEIGE FÜR BUTTONS (Kosten, Bestand, Progress) ---
+    if(document.getElementById('txt-ritter')) {
+        document.getElementById('txt-ritter').innerText = 
+            `Ritter-Kaserne (${einheitenStats.ritter.kosten}) | Gebaut: ${daten.gut.kasernen.ritter} [${Math.floor(produktionProgress.ritter * 100)}%]`;
+    }
+
+    if(document.getElementById('txt-bogenschuetze')) {
+        document.getElementById('txt-bogenschuetze').innerText = 
+            `Bogen-Kaserne (${einheitenStats.bogenschuetze.kosten}) | Gebaut: ${daten.gut.kasernen.bogenschuetze} [${Math.floor(produktionProgress.bogenschuetze * 100)}%]`;
+    }
+
+    if(document.getElementById('txt-skelett')) {
+        document.getElementById('txt-skelett').innerText = 
+            `Skelett-Friedhof (${einheitenStats.skelett.kosten}) | Gebaut: ${daten.boese.kasernen.skelett} [${Math.floor(produktionProgress.skelett * 100)}%]`;
+    }
+
 }
 // <-- HIER ENDET updateUI()
 
@@ -393,9 +451,39 @@ function bewegeEinheiten() {
                     let feindImZiel = zielSlot.some(e => e.seite !== einheit.seite && e.hp > 0);
 
                     if (feindImZiel) {
-                        // KOLLISION!
-                        let masseEigene = schlachtfeld[i].filter(e => e.seite === einheit.seite).reduce((sum, e) => sum + (e.masse || 1), 0);
-                        let masseFeind = zielSlot.filter(e => e.seite !== einheit.seite).reduce((sum, e) => sum + (e.masse || 1), 0);
+                        // KOLLISION! Wir berechnen die Masse mit Tiefen-Staffelung (100%, 50%, 25%)
+                        
+                        let masseEigene = 0;
+                        // Eigene Reihen: Aktuelles Feld (i), ein Feld dahinter, zwei Felder dahinter
+                        let eigeneReihen = [
+                            { idx: i, faktor: 1.0 },
+                            { idx: i - r.zielMod, faktor: 0.5 },
+                            { idx: i - (r.zielMod * 2), faktor: 0.25 }
+                        ];
+
+                        for (let reihe of eigeneReihen) {
+                            if (reihe.idx >= 0 && reihe.idx < feldLaenge) {
+                                masseEigene += schlachtfeld[reihe.idx]
+                                    .filter(e => e.seite === einheit.seite && e.hp > 0)
+                                    .reduce((sum, e) => sum + (e.masse || 1), 0) * reihe.faktor;
+                            }
+                        }
+
+                        let masseFeind = 0;
+                        // Feindliche Reihen: Zielfeld, ein Feld dahinter (aus Feindsicht), zwei Felder dahinter
+                        let feindReihen = [
+                            { idx: zielIdx, faktor: 1.0 },
+                            { idx: zielIdx + r.zielMod, faktor: 0.5 },
+                            { idx: zielIdx + (r.zielMod * 2), faktor: 0.25 }
+                        ];
+
+                        for (let reihe of feindReihen) {
+                            if (reihe.idx >= 0 && reihe.idx < feldLaenge) {
+                                masseFeind += schlachtfeld[reihe.idx]
+                                    .filter(e => e.seite !== einheit.seite && e.hp > 0)
+                                    .reduce((sum, e) => sum + (e.masse || 1), 0) * reihe.faktor;
+                            }
+                        }
                         
                         if (masseEigene >= (masseFeind * SCHUB_SCHWELLE)) {
                             // SCHUBSEN!
@@ -582,29 +670,61 @@ function berechneFrontlinie() {
     let auraDruckGut = 0;
     let auraDruckBoese = 0;
 
-    // Wir suchen die vordersten Einheiten UND summieren den Aura-Druck
+    // 1. Zuerst die absolute Frontlinie ermitteln
     for (let i = 0; i < feldLaenge; i++) {
         for (let j = 0; j < schlachtfeld[i].length; j++) {
             let e = schlachtfeld[i][j];
             if (e.seite === 'gut') {
                 if (i > maxGut) maxGut = i;
-                auraDruckGut += (e.auraDruck || 0); // Druck addieren
+                auraDruckGut += (e.auraDruck || 0);
             } else {
                 if (i < minBoese) minBoese = i;
-                auraDruckBoese += (e.auraDruck || 0); // Druck addieren
+                auraDruckBoese += (e.auraDruck || 0);
             }
         }
     }
 
-    // Mathematische Mitte der physischen Front
+    // 2. Taktischen Front-Druck (Masse) berechnen (100% / 50% / 25%)
+    let frontMasseGut = 0;
+    let frontMasseBoese = 0;
+
+    // Eigene Reihen (Gut drückt nach rechts)
+    let reihenGut = [
+        { idx: maxGut, faktor: 1.0 },
+        { idx: maxGut - 1, faktor: 0.5 },
+        { idx: maxGut - 2, faktor: 0.25 }
+    ];
+    for (let r of reihenGut) {
+        if (r.idx >= 0 && r.idx < feldLaenge) {
+            frontMasseGut += schlachtfeld[r.idx]
+                .filter(e => e.seite === 'gut' && e.hp > 0)
+                .reduce((sum, e) => sum + (e.masse || 1), 0) * r.faktor;
+        }
+    }
+
+    // Feindliche Reihen (Böse drückt nach links)
+    let reihenBoese = [
+        { idx: minBoese, faktor: 1.0 },
+        { idx: minBoese + 1, faktor: 0.5 },
+        { idx: minBoese + 2, faktor: 0.25 }
+    ];
+    for (let r of reihenBoese) {
+        if (r.idx >= 0 && r.idx < feldLaenge) {
+            frontMasseBoese += schlachtfeld[r.idx]
+                .filter(e => e.seite === 'boese' && e.hp > 0)
+                .reduce((sum, e) => sum + (e.masse || 1), 0) * r.faktor;
+        }
+    }
+
+    // Werte speichern (fürs UI)
+    daten.gut.aktuelleMasse = frontMasseGut;
+    daten.boese.aktuelleMasse = frontMasseBoese;
+
+    // 3. Balance-Berechnung für den Runen-Balken (wie bisher)
     let frontMitte = (maxGut + minBoese) / 2;
-    
-    // NEU: Der Aura-Druck verschiebt die Front künstlich!
-    // Gute drücken nach rechts (+), Böse drücken nach links (-)
     let auraVerschiebung = auraDruckGut - auraDruckBoese;
     frontMitte += auraVerschiebung;
     
-    // Umrechnen auf Prozent (Sicherstellen, dass es nicht unter 0 oder über 100 schießt)
     let neueBalance = (frontMitte / (feldLaenge - 1)) * 100;
     daten.balance = Math.max(0, Math.min(100, neueBalance)); 
 }
@@ -630,6 +750,42 @@ function dominoSchieben(idx, richtung) {
     einheiten.forEach(e => {
         if (zielIdx === 0 || zielIdx === feldLaenge - 1) e.hp = 0;
     });
+}
+
+function verarbeiteKasernenProduktion() {
+    // 1. RITTER (GUT)
+    if (daten.gut.kasernen.ritter > 0) {
+        // Wir holen die Rate aus dem Katalog (Fallback ist 0.1, falls du es mal vergisst einzutragen)
+        let rate = einheitenStats.ritter.spawnRate || 0.1; 
+        produktionProgress.ritter += daten.gut.kasernen.ritter * rate;
+        
+        if (produktionProgress.ritter >= 1.0) {
+            autoSpawnEinheit('ritter');
+            produktionProgress.ritter -= 1.0; 
+        }
+    }
+
+    // 2. BOGENSCHUETZE (GUT)
+    if (daten.gut.kasernen.bogenschuetze > 0) {
+        let rate = einheitenStats.bogenschuetze.spawnRate || 0.1;
+        produktionProgress.bogenschuetze += daten.gut.kasernen.bogenschuetze * rate;
+        
+        if (produktionProgress.bogenschuetze >= 1.0) {
+            autoSpawnEinheit('bogenschuetze');
+            produktionProgress.bogenschuetze -= 1.0;
+        }
+    }
+
+    // 3. SKELETT (BÖSE)
+    if (daten.boese.kasernen.skelett > 0) {
+        let rate = einheitenStats.skelett.spawnRate || 0.1;
+        produktionProgress.skelett += daten.boese.kasernen.skelett * rate;
+        
+        if (produktionProgress.skelett >= 1.0) {
+            autoSpawnEinheit('skelett');
+            produktionProgress.skelett -= 1.0;
+        }
+    }
 }
 
 //Muss am Ende bleiben!
