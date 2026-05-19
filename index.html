@@ -12,7 +12,6 @@
     <img src="title.png" alt="Battle for Balance Logo">
 </header>
 
-    <!-- Die Meta-Anzeige (Gesamtfortschritt) -->
     <div id="meta-display" style="background: #222; color: white; padding: 10px; text-align: center;">
         In den Äonen gesammelt: ✨ Hoffnung: <span id="meta-hoffnung">0</span> | 🩸 Blut: <span id="meta-blut">0</span>
     </div>
@@ -39,47 +38,50 @@
             <div class="faction blue" id="gut">
                 <h2>Orden des Lichts</h2>
                 <p id="res-gut">Glaube: 50</p>
-                <p id="work-gut">Arbeiter: 0</p>
+                <p style="font-size: 0.9em; color: #aaa; margin-top: -10px;">Zuwachs: +<span id="gen-gut">0</span>/s</p>
+                
                 <p>In diesem Zeitalter geschöpfte Hoffnung: 
-			<br> 
-			<span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
-			✨ <span id="run-hoffnung">0</span>
-			</span>
-		</p>
-                <button id="btn-arbeit-gut" onclick="kaufeArbeiter('gut')">Arbeiter anwerben</button>
-
+                    <br> 
+                    <span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
+                    ✨ <span id="run-hoffnung">0</span>
+                    </span>
+                </p>
+                
                 <button id="btn-ritter" onclick="spawnEinheit('ritter')" class="unit-btn">
-    		<img src="icon-ritter.png" class="btn-icon" alt="">
-    		<span id="txt-ritter">Ritter entsenden (20)</span> <div class="tooltip">Ein tapferer Nahkämpfer mit viel Rüstung.</div>
-		</button>
+                    <img src="icon-ritter.png" class="btn-icon" alt="">
+                    <span id="txt-ritter">Ritter entsenden (20)</span> 
+                    <div class="tooltip">Ein tapferer Nahkämpfer mit viel Rüstung.</div>
+                </button>
 
-		<button id="btn-bogenschuetze" onclick="spawnEinheit('bogenschuetze')" class="unit-btn">
-    		<img src="icon-bogen.png" class="btn-icon" alt="">
-    		<span id="txt-bogenschuetze">Bogenschütze entsenden (Lade...)</span> <div class="tooltip">Fernkämpfer, der aus der Distanz angreift.</div>
-		</button>
-
+                <button id="btn-bogenschuetze" onclick="spawnEinheit('bogenschuetze')" class="unit-btn">
+                    <img src="icon-bogen.png" class="btn-icon" alt="">
+                    <span id="txt-bogenschuetze">Bogenschütze entsenden (Lade...)</span> 
+                    <div class="tooltip">Fernkämpfer, der aus der Distanz angreift.</div>
+                </button>
             </div>
 
             <div class="faction red" id="boese">
                 <h2>Horden der Finsternis</h2>
                 <p id="res-boese">Furcht: 50</p>
-                <p id="work-boese">Sklaven: 0</p>
+                <p style="font-size: 0.9em; color: #aaa; margin-top: -10px;">Zuwachs: +<span id="gen-boese">0</span>/s</p>
+                
                 <p>In diesem Zeitalter vergossenes Blut:
-    			<br>
-    			<span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
-        		🩸 <span id="run-blut">0</span>
-   			 </span>
-		</p>
-                <button id="btn-arbeit-boese" onclick="kaufeArbeiter('boese')">Sklaven treiben</button>
+                    <br>
+                    <span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
+                    🩸 <span id="run-blut">0</span>
+                    </span>
+                </p>
+                
                 <button id="btn-skelett" onclick="spawnEinheit('skelett')" class="unit-btn">
-    		<img src="icon-skelett.png" class="btn-icon" alt="">
-    		<span id="txt-skelett">Skelett beschwören (Lade...)</span> <div class="tooltip">Ein billiger Krieger, der in Massen gefährlich ist.</div>
-</button>
+                    <img src="icon-skelett.png" class="btn-icon" alt="">
+                    <span id="txt-skelett">Skelett beschwören (Lade...)</span> 
+                    <div class="tooltip">Ein billiger Krieger, der in Massen gefährlich ist.</div>
+                </button>
             </div>
         </div>
     </div>
 
-	<script src="script.js?v=0.04"></script>
+    <script src="script.js?v=0.04"></script>
 
 </body>
 </html>

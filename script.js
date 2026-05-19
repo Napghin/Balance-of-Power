@@ -26,15 +26,15 @@ let rundeErtrag = {
 let daten = {
     gut: { 
         res: 100, 
-        arbeiter: 0, 
-        kostenArbeiter: 40, 
+        hp: 100,      // NEU: Leben der Licht-Basis
+        maxHp: 100 
     },
     boese: { 
         res: 100, 
-        arbeiter: 0, 
-        kostenArbeiter: 40, 
+        hp: 100,      // NEU: Leben der Finsternis-Basis
+        maxHp: 100 
     },
-    balance: 50 
+    balance: 50       // Bleibt vorerst drin, falls du den Balken optisch noch nutzen willst
 };
 
 // 4. SCHLACHTFELD-STRUKTUR
@@ -72,8 +72,10 @@ const einheitenStats = {
         moveWait: 4,        // Lauf-Pause: Wie viele Sekunden pro Schritt gewartet wird (0 = jede Sek.)
         moveTimer: 0,       // Interner Zähler: Regelt die Lauf-Verzögerung
         crowdFactor: 2,     // Drängel-Strafe: Zusätzliche Sekunden-Pause beim Durchlaufen von Freunden
-        auraDruck: 0.1,     // Wie stark die Einheit den "Balken" (Druck) in ihre Richtung schiebt
-        position: 0         // Startposition auf dem Array
+        auraDruck: 0,       // Wie stark die Einheit den "Balken" (Druck) in ihre Richtung schiebt
+        position: 0,        // Startposition auf dem Array
+	einkommen: 1,	    // Erzeugtes Einkommen
+	metaWert: 2	    //erzeugtes Blut/Hoffnunf
     },
     bogenschuetze: {
         typ: 'B',           
@@ -91,8 +93,10 @@ const einheitenStats = {
         moveWait: 5,        
         moveTimer: 0,
         crowdFactor: 1,     
-        auraDruck: 0.05,    
-        position: 0
+        auraDruck: 0,    
+        position: 0,
+	einkommen: 1,
+	metaWert: 2
     },
     skelett: {
         typ: 'S',
@@ -110,8 +114,10 @@ const einheitenStats = {
         moveWait: 2, 
         moveTimer: 0,
         crowdFactor: 1,
-        auraDruck: 0.15,
-        position: feldLaenge - 1
+        auraDruck: 0,
+        position: feldLaenge - 1,
+	einkommen: 1,
+	metaWert: 2
     }
 
 };
@@ -140,49 +146,33 @@ function spawnEinheit(name) {
     }
 }
 
-// 7. SPIEL-MOTOR
-setInterval(() => {
-
-    //EINHEITEN BEWEGEN 
-   	 bewegeEinheiten();
-	 entferneToteEinheiten();
-
-    // Ressourcen generieren
-    daten.gut.res += (1 + daten.gut.arbeiter);
-    daten.boese.res += (1 + daten.boese.arbeiter);
-
-	let kriegerGut = 0;
-	let kriegerBoese = 0;
-	let auraDruckGut = 0;
-	let auraDruckBoese = 0;
-
-	// Wir scannen das ganze Feld
-	for (let fach of schlachtfeld) {
-    		for (let einheit of fach) {
-        		if (einheit.seite === 'gut') {
-            	           kriegerGut++;
-                           auraDruckGut += einheit.auraDruck;
-       			} else {
-            		   kriegerBoese++;
-                           auraDruckBoese += einheit.auraDruck;
-       			}
-    		}
+// START-ARMEE 
+// Spawn 5 Ritter auf Feld 0 und 5 Skelette auf dem letzten Feld
+for (let i = 0; i < 5; i++) {
+    schlachtfeld[0].push(erstelleEinheit('ritter'));
+    schlachtfeld[feldLaenge - 1].push(erstelleEinheit('skelett'));
 }
 
-    // Meta-Währung generieren (Basierend auf Kriegern)
-    	rundeErtrag.hoffnung += kriegerGut * 0.5;
-	rundeErtrag.blut += kriegerBoese * 0.5;
+// 7. SPIEL-MOTOR
+setInterval(() => {
+    // 1. Kämpfen und Bewegen
+    bewegeEinheiten();
+    
+    // 2. Tote vom Feld räumen (und Meta-Ressourcen generieren)
+    entferneToteEinheiten();
 
-    // Balance berechnen
-    	let chaos = (Math.random() - 0.5) * 0.1;
-	daten.balance += (auraDruckGut - auraDruckBoese + chaos);
+    // 3. Wirtschaft & Balance 
+    generiereEinkommen();
+    berechneFrontlinie(); // Hier ist die Aura jetzt integriert!
 
-
+    // 4. Grafik & Spielende
     updateUI();
     checkGameOver();
 }, 1000);
 
 // 8. FUNKTIONEN
+
+/*
 function kaufeArbeiter(seite) {
     let s = daten[seite];
     if (s.res >= s.kostenArbeiter) {
@@ -193,70 +183,37 @@ function kaufeArbeiter(seite) {
         updateUI();
     }
 }
+*/
 
 function updateUI() {
     // Ressourcen
-	document.getElementById('res-gut').innerText = "Glaube: " + Math.floor(daten.gut.res) + " ✝️";
-	document.getElementById('res-boese').innerText = "Furcht: " + Math.floor(daten.boese.res) + " 💀";
+    document.getElementById('res-gut').innerText = "Glaube: " + Math.floor(daten.gut.res) + " ✝️";
+    document.getElementById('res-boese').innerText = "Furcht: " + Math.floor(daten.boese.res) + " 💀";
 
-    //alt : document.getElementById('res-gut').innerText = "Glaube: " + Math.floor(daten.gut.res);
-    document.getElementById('work-gut').innerText = "Arbeiter: " + daten.gut.arbeiter + " (Preis: " + daten.gut.kostenArbeiter + ")";
-    
-    //alt: document.getElementById('res-boese').innerText = "Furcht: " + Math.floor(daten.boese.res);
-    document.getElementById('work-boese').innerText = "Sklaven: " + daten.boese.arbeiter + " (Preis: " + daten.boese.kostenArbeiter + ")";
-
-    // Arbeiter-Button GUT
-    const btnArbeitGut = document.getElementById('btn-arbeit-gut');
-    if (btnArbeitGut) {
-        btnArbeitGut.innerText = `Arbeiter anwerben (${daten.gut.kostenArbeiter})`;
-    }
-
-    // Arbeiter-Button BÖSE
-    const btnArbeitBoese = document.getElementById('btn-arbeit-boese');
-    if (btnArbeitBoese) {
-        btnArbeitBoese.innerText = `Sklaven treiben (${daten.boese.kostenArbeiter})`;
-    }
-
-    // --- KORRIGIERTER BEREICH: BALANCE-RUNEN & LICHT ---
+    // --- BALANCE-RUNEN & LICHT ---
     const fillGut = document.getElementById('balance-fill-gut');
     const fillBoese = document.getElementById('balance-fill-boese');
 
     if (fillGut && fillBoese) {
-        // 1. Breite der Balken setzen
         fillGut.style.width = daten.balance + "%";
         fillBoese.style.width = (100 - daten.balance) + "%";
 
-        // 2. Licht für die gute Seite (Blau)
         let intensityFactor = daten.balance / 100;
         fillGut.style.setProperty('--intensity', intensityFactor.toFixed(2));
 
-        // 3. Finsternis für die böse Seite (Rot)
         let darknessFactor = 1 - (daten.balance / 100);
         fillBoese.style.setProperty('--darkness', darknessFactor.toFixed(2));
     } 
-    
-    // Einheiten zählen
-    let countGut = 0;
-    let countBoese = 0;
-    for (let fach of schlachtfeld) {
-        for (let einheit of fach) {
-            if (einheit.seite === 'gut') countGut++;
-            else countBoese++;
-        }
-    }
 
-    // Run-Ertrag Anzeige
+    // Run-Ertrag & Meta Anzeige
     document.getElementById('run-hoffnung').innerText = Math.floor(rundeErtrag.hoffnung);
     document.getElementById('run-blut').innerText = Math.floor(rundeErtrag.blut);
-
-    // Meta-Anzeige (Gesamt)
     document.getElementById('meta-hoffnung').innerText = metaProgress.hoffnungGesamt;
     document.getElementById('meta-blut').innerText = metaProgress.blutGesamt;
 
-
-// SCHLACHTFELD Aktualisieren
+    // SCHLACHTFELD Aktualisieren
     const display = document.getElementById('battle-display');
-    display.innerHTML = ""; // Altes Feld löschen
+    display.innerHTML = ""; 
 
     for (let i = 0; i < feldLaenge; i++) {
         let slotDiv = document.createElement('div');
@@ -266,24 +223,26 @@ function updateUI() {
             let punkt = document.createElement('div');
             punkt.className = 'einheit-punkt';
             
-            if (schlachtfeld[i][ebene]) {
+            // SICHERHEITS-CHECK gegen Abstürze!
+            if (schlachtfeld[i] && schlachtfeld[i][ebene]) {
                 let e = schlachtfeld[i][ebene];
 
-                // --- 1. HIT FLASH CHECK ---
                 if (e.wurdeGetroffen) {
                     punkt.classList.add('hit-flash'); 
                     e.wurdeGetroffen = false; 
                 }
 
-                // --- 2. OPACITY (Transparenz) KORRIGIERT ---
-                // Wir nutzen jetzt e.maxHp, das wir in erstelleEinheit() hinzugefügt haben
+                let aktuelleHp = (e.hp !== undefined) ? e.hp : 10;
                 let maxHp = e.maxHp || 10; 
-                let hpProzent = e.hp / maxHp;
+                let hpProzent = aktuelleHp / maxHp;
                 if (isNaN(hpProzent) || hpProzent < 0) hpProzent = 0;
                 punkt.style.opacity = Math.max(0.25, hpProzent);
 
-                // --- 3. OPTIK DER EINHEIT ---
-                punkt.innerText = e.typ.charAt(0).toUpperCase(); 
+                if (e.typ) {
+                    punkt.innerText = e.typ.charAt(0).toUpperCase(); 
+                } else {
+                    punkt.innerText = "?";
+                }
                 punkt.style.color = (e.seite === 'gut') ? '#55aaff' : '#ff5555';
                 punkt.style.fontWeight = "bold";
 
@@ -304,7 +263,7 @@ function updateUI() {
         display.appendChild(slotDiv);
     }
 
-    // --- BUTTONS AUSGRAUEN (Jetzt direkt ausgeführt!) ---
+    // --- BUTTONS AUSGRAUEN ---
     let btnRitter = document.getElementById('btn-ritter');
     if (btnRitter) btnRitter.disabled = (daten.gut.res < einheitenStats.ritter.kosten);
 
@@ -313,7 +272,13 @@ function updateUI() {
     
     let btnBogen = document.getElementById('btn-bogenschuetze');
     if (btnBogen) btnBogen.disabled = (daten.gut.res < einheitenStats.bogenschuetze.kosten);
-} 
+
+// BASIS-HP ANZEIGEN
+    const visualBaseGut = document.querySelector('.base-gut');
+    const visualBaseBoese = document.querySelector('.base-boese');
+    if (visualBaseGut) visualBaseGut.innerText = daten.gut.hp + " / " + daten.gut.maxHp;
+    if (visualBaseBoese) visualBaseBoese.innerText = daten.boese.hp + " / " + daten.boese.maxHp;
+}
 // <-- HIER ENDET updateUI()
 
 
@@ -337,7 +302,8 @@ function aktualisiereButtonTexte() {
 }
 
 function checkGameOver() {
-    if (daten.balance <= 0 || daten.balance >= 100) {
+    // NEU: Spiel endet, wenn eine der beiden Basen 0 HP erreicht
+    if (daten.gut.hp <= 0 || daten.boese.hp <= 0) {
         
         // 1. Werte berechnen
         let gewonneneHoffnung = Math.floor(rundeErtrag.hoffnung || 0);
@@ -346,19 +312,17 @@ function checkGameOver() {
         metaProgress.hoffnungGesamt += gewonneneHoffnung;
         metaProgress.blutGesamt += gewonnenesBlut;
 
-        // 2. Der Try-Container für den LocalStorage
+        // 2. LocalStorage speichern (bleibt gleich)
         try {
             localStorage.setItem('hoffnungGesamt', metaProgress.hoffnungGesamt);
             localStorage.setItem('blutGesamt', metaProgress.blutGesamt);
-            console.log("Fortschritt lokal gespeichert.");
         } catch (e) {
-            // Falls der Browser blockiert, loggen wir es nur, statt abzustürzen
-            console.warn("Speichern im LocalStorage fehlgeschlagen (file:/// Modus).", e);
+            console.warn("Speichern im LocalStorage fehlgeschlagen.", e);
         }
 
         // 3. Den Spieler informieren
-        let sieger = daten.balance >= 100 ? "DAS LICHT" : "DIE FINSTERNIS";
-        alert("Run beendet! " + sieger + " hat gesiegt.\nErhaltene Hoffnung: " + gewonneneHoffnung + "\nErhaltenes Blut: " + gewonnenesBlut);
+        let sieger = daten.boese.hp <= 0 ? "DAS LICHT" : "DIE FINSTERNIS";
+        alert("Run beendet! " + sieger + " hat die gegnerische Basis zerstört.\nErhaltene Hoffnung: " + gewonneneHoffnung + "\nErhaltenes Blut: " + gewonnenesBlut);
         
         // 4. Neustart
         location.reload();
@@ -418,13 +382,15 @@ function bewegeEinheiten() {
                     let basisInReichweite = (distZurBasis <= einheit.reichweite);
 
                     if (basisInReichweite) {
-                        // BASIS BELAGERN (Nah- und Fernkämpfer!)
+                        // BASIS ANGREIFEN (Nah- und Fernkämpfer!)
                         if (einheit.moveTimer <= 0) {
-                            // Balken verschieben
-                            if (einheit.seite === 'gut') daten.balance += 5;
-                            else daten.balance -= 5;
                             
-                            console.log(einheit.typ + " beschießt/belagert die Basis aus " + distZurBasis + " Feldern Entfernung!");
+                            // NEU: Echter Schaden an der Basis!
+                            if (einheit.seite === 'gut') {
+                                daten.boese.hp -= einheit.schaden;
+                            } else {
+                                daten.gut.hp -= einheit.schaden;
+                            }
                             
                             // Die Einheit bleibt stehen und lädt ihren Cooldown neu auf
                             einheit.moveTimer = (einheit.moveWait || 0);
@@ -491,7 +457,7 @@ function angriff(angreifer, zielSlotIndex) {
                     
                     // Feedback für den Spieler
                     opfer.wurdeGetroffen = true; 
-                    zeigeSchaden(angreifer.schaden, aktuellerSlotIndex, angreifer.seite);
+                    zeigeSchaden(angreifer.schaden, aktuellerSlotIndex, angreifer.seite, e);
                     
                     trefferZaehler++;
 
@@ -513,7 +479,7 @@ function angriff(angreifer, zielSlotIndex) {
     angreifer.cooldown = angreifer.as;
 }
 
-function zeigeSchaden(schaden, slotIndex, angreiferSeite) {
+function zeigeSchaden(schaden, slotIndex, angreiferSeite, ebene) {
     const display = document.getElementById('battle-display');
     const wrapper = document.querySelector('.battle-wrapper');
     if (!display || !wrapper) return;
@@ -529,18 +495,27 @@ function zeigeSchaden(schaden, slotIndex, angreiferSeite) {
     flText.innerText = "-" + Math.floor(schaden);
     flText.className = 'schaden-text';
     
-    // --- NEU: FARBE NACH FRAKTION ---
+    // Farbe und Schatten (wie gehabt)
     if (angreiferSeite === 'gut') {
-        flText.style.color = "#ffffff"; // Weiße Schrift...
-        flText.style.textShadow = "0px 0px 8px #55aaff, 2px 2px 0px black"; // ...mit blauem Leuchten!
+        flText.style.color = "#ffffff";
+        flText.style.textShadow = "0px 0px 8px #55aaff, 2px 2px 0px black";
     } else {
-        flText.style.color = "#ffffff"; // Weiße Schrift...
-        flText.style.textShadow = "0px 0px 8px #ff5555, 2px 2px 0px black"; // ...mit rotem Leuchten!
+        flText.style.color = "#ffffff";
+        flText.style.textShadow = "0px 0px 8px #ff5555, 2px 2px 0px black";
     }
 
     flText.style.position = 'absolute';
     flText.style.left = (rect.left - wrapperRect.left + (rect.width / 2) - 10) + 'px'; 
-    flText.style.top = (rect.top - wrapperRect.top - 5) + 'px'; 
+
+    // --- NEU: DIE HÖHENBERECHNUNG ---
+    // Ein Slot ist ca. 120-150px hoch. Wir wissen, dass die Einheiten ca. 25px hoch sind.
+    // Wir starten unten im Slot und ziehen pro Ebene Pixel ab, um höher zu kommen.
+    // Falls 'ebene' nicht mitgeliefert wurde (undefined), nehmen wir standardmäßig 2 (die Mitte).
+    let ebenenOffset = (ebene !== undefined) ? (ebene * 24) : 48; 
+    
+    // Wir berechnen den Startpunkt: (Unten am Slot) minus (Höhe der Ebene)
+    // Die +10 oder -10 musst du evtl. kurz testen, je nachdem wie dein CSS-Layout genau sitzt.
+    flText.style.top = (rect.bottom - wrapperRect.top - ebenenOffset - 35) + 'px'; 
 
     wrapper.appendChild(flText);
 
@@ -550,17 +525,94 @@ function zeigeSchaden(schaden, slotIndex, angreiferSeite) {
 }
 
 function entferneToteEinheiten() {
-    // Wir gehen das komplette Schlachtfeld durch
     for (let i = 0; i < feldLaenge; i++) {
-        // Rückwärts durch den Slot loopen (wichtig beim Löschen aus Arrays!)
         for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
-            if (schlachtfeld[i][j].hp <= 0) {
-                // Jetzt erst wird die Einheit endgültig vom Feld genommen
+            let opfer = schlachtfeld[i][j];
+            
+            if (opfer.hp <= 0) {
+                // --- META-RESSOURCEN DURCH KILLS ---
+                // Wir lesen den Wert aus. Falls du bei einer Einheit vergessen hast, 
+                // den metaWert einzutragen, nimmt das Spiel sicherheitshalber 1.
+                let wertung = opfer.metaWert || 1; 
+
+                if (opfer.seite === 'boese') {
+                    // Ein Böser stirbt -> Hoffnung steigt um seinen Wert
+                    rundeErtrag.hoffnung += wertung; 
+                } else {
+                    // Ein Guter stirbt -> Blut steigt um seinen Wert
+                    rundeErtrag.blut += wertung; 
+                }
+                
+                // Einheit vom Feld nehmen
                 schlachtfeld[i].splice(j, 1);
             }
         }
     }
 }
+
+function generiereEinkommen() {
+    let einkommenGut = 2;
+    let einkommenBoese = 2;
+
+    // Wir scannen das Schlachtfeld  für das Bonuseinkommen
+    for (let i = 0; i < feldLaenge; i++) {
+        for (let j = 0; j < schlachtfeld[i].length; j++) {
+            let e = schlachtfeld[i][j];
+
+            if (e.seite === 'gut') {
+                // Liest den Wert aus dem Katalog (z.B. ritter.einkommen). Wenn keiner da ist, standardmäßig 1.
+                einkommenGut += (e.einkommen || 1); 
+            } else {
+                einkommenBoese += (e.einkommen || 1);
+            }
+        }
+    }
+
+    // Ressourcen gutschreiben
+    daten.gut.res += einkommenGut;
+    daten.boese.res += einkommenBoese;
+
+    // NEU: Die Werte in deine neuen HTML-Anzeigen schreiben
+    const genGutAnzeige = document.getElementById('gen-gut');
+    const genBoeseAnzeige = document.getElementById('gen-boese');
+    if (genGutAnzeige) genGutAnzeige.innerText = einkommenGut;
+    if (genBoeseAnzeige) genBoeseAnzeige.innerText = einkommenBoese;
+}
+
+function berechneFrontlinie() {
+    let maxGut = 0; 
+    let minBoese = feldLaenge - 1; 
+    
+    let auraDruckGut = 0;
+    let auraDruckBoese = 0;
+
+    // Wir suchen die vordersten Einheiten UND summieren den Aura-Druck
+    for (let i = 0; i < feldLaenge; i++) {
+        for (let j = 0; j < schlachtfeld[i].length; j++) {
+            let e = schlachtfeld[i][j];
+            if (e.seite === 'gut') {
+                if (i > maxGut) maxGut = i;
+                auraDruckGut += (e.auraDruck || 0); // Druck addieren
+            } else {
+                if (i < minBoese) minBoese = i;
+                auraDruckBoese += (e.auraDruck || 0); // Druck addieren
+            }
+        }
+    }
+
+    // Mathematische Mitte der physischen Front
+    let frontMitte = (maxGut + minBoese) / 2;
+    
+    // NEU: Der Aura-Druck verschiebt die Front künstlich!
+    // Gute drücken nach rechts (+), Böse drücken nach links (-)
+    let auraVerschiebung = auraDruckGut - auraDruckBoese;
+    frontMitte += auraVerschiebung;
+    
+    // Umrechnen auf Prozent (Sicherstellen, dass es nicht unter 0 oder über 100 schießt)
+    let neueBalance = (frontMitte / (feldLaenge - 1)) * 100;
+    daten.balance = Math.max(0, Math.min(100, neueBalance)); 
+}
+
 
 //Muss am Ende bleiben!
 aktualisiereButtonTexte()
