@@ -94,7 +94,8 @@ const einheitenStats = {
         position: 0,        // Startposition auf dem Array
 	    einkommen: 0.5,	    // Erzeugtes Einkommen
 	    metaWert: 2,	    //erzeugtes Blut/Hoffnung
-        spawnRate: 0.05 // NEU: 0.05 bedeutet 5% pro Sekunde = 20 Sekunden für 1 Ritter
+        spawnRate: 0.05, // NEU: 0.05 bedeutet 5% pro Sekunde = 20 Sekunden für 1 Ritter
+        beschreibung: "Baut eine Kaserne, die stetig schwere Nahkämpfer produziert."
     },
     bogenschuetze: {
         typ: 'B',           
@@ -116,7 +117,8 @@ const einheitenStats = {
         position: 0,
 	    einkommen: 0.5,
 	    metaWert: 2,
-        spawnRate: 0.03
+        spawnRate: 0.03,
+        beschreibung: "Errichtet einen Schießstand für Fernkämpfer."
 
     },
     skelett: {
@@ -139,7 +141,8 @@ const einheitenStats = {
         position: feldLaenge - 1,
 	    einkommen: 0.5,
 	    metaWert: 2,
-        spawnRate: 0.07
+        spawnRate: 0.07,
+        beschreibung: "Erweckt stetig billige Krieger aus dem verseuchten Boden."
     
     }
 
@@ -312,12 +315,15 @@ function updateUI() {
     if (visualBaseBoese) visualBaseBoese.innerText = daten.boese.hp + " / " + daten.boese.maxHp;
 
 // --- Debug-Anzeigen ---
+   
     if(document.getElementById('masse-gut')) {
-    document.getElementById('masse-gut').innerText = "Armee-Gewicht: " + daten.gut.aktuelleMasse;
+    // Schreibt nur noch die nackte, auf eine Nachkommastelle gerundete Zahl in das Span
+    document.getElementById('masse-gut').innerText = Number(daten.gut.aktuelleMasse).toFixed(1);
     }
     if(document.getElementById('masse-boese')) {
-    document.getElementById('masse-boese').innerText = "Armee-Gewicht: " + daten.boese.aktuelleMasse;
+        document.getElementById('masse-boese').innerText = Number(daten.boese.aktuelleMasse).toFixed(1);
     }
+
 
 // --- ANZEIGE FÜR BUTTONS (Kosten, Bestand, Progress) ---
     if(document.getElementById('txt-ritter')) {
@@ -333,6 +339,35 @@ function updateUI() {
     if(document.getElementById('txt-skelett')) {
         document.getElementById('txt-skelett').innerText = 
             `Skelett-Friedhof (${einheitenStats.skelett.kosten}) | Gebaut: ${daten.boese.kasernen.skelett} [${Math.floor(produktionProgress.skelett * 100)}%]`;
+    }
+
+// --- TOOLTIPS DYNAMISCH GENERIEREN (Lore + Stats) ---
+    function generiereTooltip(stats) {
+        // Die Rate in Prozent umrechnen (z.B. 0.05 -> 5)
+        let prozentRate = Math.round(stats.spawnRate * 100);
+
+        return `
+            ${stats.beschreibung}
+            <hr style="border: 1px solid #555; margin: 8px 0;">
+            <span style="color: #ffaa00; line-height: 1.6; font-size: 0.95em;">
+            <b>[ KAMPF ]</b><br>
+            ⚔️ Schaden: <b>${stats.schaden}</b> | ⚡ Tempo: <b>${stats.as}s</b> | 🎯 Reichw.: <b>${stats.reichweite}</b><br>
+            <b>[ TAKTIK ]</b><br>
+            ⚖️ Masse: <b>${stats.masse}</b> | ⏳ Setup: <b>${stats.setup}s</b><br>
+            <b>[ WIRTSCHAFT ]</b><br>
+            💰 Einkommen: <b>+${stats.einkommen}/s</b><br>
+            🏗️ Produktion: <b>+${prozentRate}%/s pro Gebäude</b>
+            </span>`;
+    }
+
+    if(document.getElementById('tt-ritter')) {
+        document.getElementById('tt-ritter').innerHTML = generiereTooltip(einheitenStats.ritter);
+    }
+    if(document.getElementById('tt-bogenschuetze')) {
+        document.getElementById('tt-bogenschuetze').innerHTML = generiereTooltip(einheitenStats.bogenschuetze);
+    }
+    if(document.getElementById('tt-skelett')) {
+        document.getElementById('tt-skelett').innerHTML = generiereTooltip(einheitenStats.skelett);
     }
 
 }
@@ -399,20 +434,16 @@ function bewegeEinheiten() {
         { seite: 'boese', zielMod: -1, start: 0, ende: feldLaenge - 1, schritt: 1 }
     ];
 
-    // --- MASSE-VORTEIL KONFIGURATION ---
     const SCHUB_SCHWELLE = 1.33; 
 
     for (let r of richtungen) {
-        // Schleife über alle Slots
         for (let i = r.start; r.schritt === -1 ? i >= r.ende : i <= r.ende; i += r.schritt) {
-            
-            // Schleife über die Einheiten im Slot
             for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
                 let einheit = schlachtfeld[i][j];
                 
-                if (einheit.seite !== r.seite || einheit.moveTimer > 0) continue;
+                if (einheit.seite !== r.seite) continue;
 
-                // --- 2. KAMPF-SCAN ---
+                // --- 2. KAMPF-SCAN (IMMER ausführen, auch wenn die Beine müde sind!) ---
                 let gegnerGefunden = false;
                 let gegnerSlotIndex = -1;
                 for (let dist = 0; dist <= einheit.reichweite; dist++) {
@@ -425,42 +456,40 @@ function bewegeEinheiten() {
                     }
                 }
 
-                // Zuschlagen oder Basis belagern
                 if (gegnerGefunden) {
                     angriff(einheit, gegnerSlotIndex);
                 } else {
                     let distZurBasis = (einheit.seite === 'gut') ? ((feldLaenge - 1) - i) : (i - 0);
                     if (distZurBasis <= einheit.reichweite) {
-                        // Schaden an der Basis
-                        if (einheit.seite === 'gut') daten.boese.hp -= einheit.schaden;
-                        else daten.gut.hp -= einheit.schaden;
-                        
-                        einheit.moveTimer = (einheit.moveWait || 2);
-                        if (einheit.setup) einheit.cooldown = einheit.setup;
-                        continue; 
+                        // Basis-Angriff braucht auch den Cooldown, sonst greifen sie jede Sekunde an
+                        if (einheit.cooldown > 0) {
+                            einheit.cooldown--;
+                        } else {
+                            if (einheit.seite === 'gut') daten.boese.hp -= einheit.schaden;
+                            else daten.gut.hp -= einheit.schaden;
+                            einheit.cooldown = einheit.as;
+                        }
+                        continue; // Wer die Basis haut, läuft nicht weiter rein
                     }
                 }
 
-                // --- 3. BEWEGUNG & PHYSIK-INTEGRATION ---
+                // --- 3. BEWEGUNG & PHYSIK (NUR ausführen, wenn moveTimer == 0) ---
+                if (einheit.moveTimer > 0) continue; 
+
                 let zielIdx = i + r.zielMod;
                 
-                // ARCHITEKTUR-FIX: Einheiten dürfen sich NUR im Bereich 1 bis (feldLaenge - 2) frei bewegen!
-                // Feld 0 (Gute Basis) und Feld 21 (Böse Basis) sind für reguläre Schritte tabu.
                 if (zielIdx >= 1 && zielIdx <= feldLaenge - 2) {
                     let zielSlot = schlachtfeld[zielIdx];
                     let feindImZiel = zielSlot.some(e => e.seite !== einheit.seite && e.hp > 0);
 
                     if (feindImZiel) {
-                        // KOLLISION! Wir berechnen die Masse mit Tiefen-Staffelung (100%, 50%, 25%)
-                        
+                        // Masse mit Tiefen-Staffelung
                         let masseEigene = 0;
-                        // Eigene Reihen: Aktuelles Feld (i), ein Feld dahinter, zwei Felder dahinter
                         let eigeneReihen = [
                             { idx: i, faktor: 1.0 },
                             { idx: i - r.zielMod, faktor: 0.5 },
                             { idx: i - (r.zielMod * 2), faktor: 0.25 }
                         ];
-
                         for (let reihe of eigeneReihen) {
                             if (reihe.idx >= 0 && reihe.idx < feldLaenge) {
                                 masseEigene += schlachtfeld[reihe.idx]
@@ -470,13 +499,11 @@ function bewegeEinheiten() {
                         }
 
                         let masseFeind = 0;
-                        // Feindliche Reihen: Zielfeld, ein Feld dahinter (aus Feindsicht), zwei Felder dahinter
                         let feindReihen = [
                             { idx: zielIdx, faktor: 1.0 },
                             { idx: zielIdx + r.zielMod, faktor: 0.5 },
                             { idx: zielIdx + (r.zielMod * 2), faktor: 0.25 }
                         ];
-
                         for (let reihe of feindReihen) {
                             if (reihe.idx >= 0 && reihe.idx < feldLaenge) {
                                 masseFeind += schlachtfeld[reihe.idx]
@@ -486,9 +513,7 @@ function bewegeEinheiten() {
                         }
                         
                         if (masseEigene >= (masseFeind * SCHUB_SCHWELLE)) {
-                            // SCHUBSEN!
                             dominoSchieben(zielIdx, r.zielMod);
-                            
                             schlachtfeld[i].splice(j, 1);
                             zielSlot.push(einheit);
                             einheit.moveTimer = (einheit.moveWait || 2);
@@ -496,15 +521,14 @@ function bewegeEinheiten() {
                             einheit.moveTimer = 1; 
                         }
                     } else if (zielSlot.length < 5) {
-                        // FREI: Bewegen erlaubt, da zielIdx garantiert im erlaubten Bereich liegt
                         schlachtfeld[i].splice(j, 1);
                         zielSlot.push(einheit);
                         einheit.moveTimer = (einheit.moveWait || 2);
                     }
                 }
-            } // Ende j
-        } // Ende i
-    } // Ende r
+            }
+        }
+    }
 }
 
 
