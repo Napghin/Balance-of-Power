@@ -77,8 +77,8 @@ const einheitenStats = {
     ritter: {
         typ: 'R',           // Das Symbol auf dem Spielfeld (Buchstabe)
         seite: 'gut',       // Bestimmt die Marschrichtung (gut = rechts, boese = links)
-        kosten: 20,         // Wie viel Gold/Glaube beim Spawnen abgezogen wird
-        hp: 20,             // Lebenspunkte (bei 0 wird die Einheit gelöscht)
+        kosten: 30,         // Wie viel Gold/Glaube beim Spawnen abgezogen wird
+        hp: 10,             // Lebenspunkte (bei 0 wird die Einheit gelöscht)
         masse: 2,           // Gewicht für die Frontlinie (wichtig fürs spätere Schieben)
         schaden: 5,         // Wie viel HP dem Gegner pro Treffer abgezogen werden
         reichweite: 1,      // 1 = Nahkampf, 2+ = Fernkampf (Scan-Distanz in Feldern)
@@ -92,8 +92,8 @@ const einheitenStats = {
         crowdFactor: 2,     // Drängel-Strafe: Zusätzliche Sekunden-Pause beim Durchlaufen von Freunden
         auraDruck: 0,       // Wie stark die Einheit den "Balken" (Druck) in ihre Richtung schiebt
         position: 0,        // Startposition auf dem Array
-	    einkommen: 0.5,	    // Erzeugtes Einkommen
-	    metaWert: 2,	    //erzeugtes Blut/Hoffnung
+	einkommen: 0.5,	    // Erzeugtes Einkommen
+	metaWert: 2,	    //erzeugtes Blut/Hoffnung
         spawnRate: 0.05, // NEU: 0.05 bedeutet 5% pro Sekunde = 20 Sekunden für 1 Ritter
         beschreibung: "Baut eine Kaserne, die stetig schwere Nahkämpfer produziert."
     },
@@ -115,8 +115,8 @@ const einheitenStats = {
         crowdFactor: 1,     
         auraDruck: 0,    
         position: 0,
-	    einkommen: 0.5,
-	    metaWert: 2,
+	einkommen: 0.5,
+	metaWert: 2,
         spawnRate: 0.03,
         beschreibung: "Errichtet einen Schießstand für Fernkämpfer."
 
@@ -125,7 +125,7 @@ const einheitenStats = {
         typ: 'S',
         seite: 'boese',
         kosten: 40,
-        hp: 22,
+        hp: 13,
         masse: 1,
         schaden: 6,
         reichweite: 1,
@@ -139,8 +139,8 @@ const einheitenStats = {
         crowdFactor: 1,
         auraDruck: 0,
         position: feldLaenge - 1,
-	    einkommen: 0.5,
-	    metaWert: 2,
+	einkommen: 0.5,
+	metaWert: 2,
         spawnRate: 0.07,
         beschreibung: "Erweckt stetig billige Krieger aus dem verseuchten Boden."
     
@@ -171,13 +171,20 @@ function kaufeKaserne(name) {
 function autoSpawnEinheit(name) {
     let stats = einheitenStats[name];
     let seite = stats.seite;
-    let neueEinheit = erstelleEinheit(name);
     
-    if (seite === 'gut') {
-        schlachtfeld[0].push(neueEinheit);
-    } else {
-        schlachtfeld[feldLaenge - 1].push(neueEinheit);
+    // Ermittle das richtige Feld (Gut = ganz links, Böse = ganz rechts)
+    let slotIdx = (seite === 'gut') ? 0 : feldLaenge - 1;
+
+    // BUGFIX 2: Prüfen, ob der Burghof schon voll ist (Maximal 5 Einheiten)
+    if (schlachtfeld[slotIdx].length >= 5) {
+        return false; // Spawn fehlgeschlagen, das Tor ist blockiert!
     }
+
+    // Wenn Platz ist, Einheit erstellen und aufs Feld setzen
+    let neueEinheit = erstelleEinheit(name);
+    schlachtfeld[slotIdx].push(neueEinheit);
+    
+    return true; // Spawn war erfolgreich
 }
 
 // START-ARMEE 
@@ -779,13 +786,17 @@ function dominoSchieben(idx, richtung) {
 function verarbeiteKasernenProduktion() {
     // 1. RITTER (GUT)
     if (daten.gut.kasernen.ritter > 0) {
-        // Wir holen die Rate aus dem Katalog (Fallback ist 0.1, falls du es mal vergisst einzutragen)
-        let rate = einheitenStats.ritter.spawnRate || 0.1; 
+        let rate = einheitenStats.ritter.spawnRate || 0.1;
         produktionProgress.ritter += daten.gut.kasernen.ritter * rate;
         
-        if (produktionProgress.ritter >= 1.0) {
-            autoSpawnEinheit('ritter');
-            produktionProgress.ritter -= 1.0; 
+        // BUGFIX 1: "while" statt "if" - Spawnt so lange, wie Progress >= 1 ist!
+        while (produktionProgress.ritter >= 1.0) {
+            let gespawnt = autoSpawnEinheit('ritter');
+            if (gespawnt) {
+                produktionProgress.ritter -= 1.0; 
+            } else {
+                break; // Abbruch! Der Spawn ist blockiert. Progress bleibt voll und wartet auf Platz.
+            }
         }
     }
 
@@ -794,9 +805,12 @@ function verarbeiteKasernenProduktion() {
         let rate = einheitenStats.bogenschuetze.spawnRate || 0.1;
         produktionProgress.bogenschuetze += daten.gut.kasernen.bogenschuetze * rate;
         
-        if (produktionProgress.bogenschuetze >= 1.0) {
-            autoSpawnEinheit('bogenschuetze');
-            produktionProgress.bogenschuetze -= 1.0;
+        while (produktionProgress.bogenschuetze >= 1.0) {
+            if (autoSpawnEinheit('bogenschuetze')) {
+                produktionProgress.bogenschuetze -= 1.0;
+            } else {
+                break;
+            }
         }
     }
 
@@ -805,12 +819,39 @@ function verarbeiteKasernenProduktion() {
         let rate = einheitenStats.skelett.spawnRate || 0.1;
         produktionProgress.skelett += daten.boese.kasernen.skelett * rate;
         
-        if (produktionProgress.skelett >= 1.0) {
-            autoSpawnEinheit('skelett');
-            produktionProgress.skelett -= 1.0;
+        while (produktionProgress.skelett >= 1.0) {
+            if (autoSpawnEinheit('skelett')) {
+                produktionProgress.skelett -= 1.0;
+            } else {
+                break;
+            }
         }
     }
 }
 
-//Muss am Ende bleiben!
 aktualisiereButtonTexte()
+
+// TASTATUR-KOMMANDO (HOTKEYS) ---
+window.addEventListener('keydown', function(event) {
+    const taste = event.key.toUpperCase();
+
+    switch(taste) {
+        // --- DIE GUTEN (Linke Hand) ---
+        case 'Q':
+            kaufeKaserne('ritter');
+            break;
+            
+        case 'W':
+            kaufeKaserne('bogenschuetze');
+            break;
+
+        // --- DIE BÖSEN (Rechte Hand) ---
+        case 'I':
+            kaufeKaserne('skelett');
+            break;
+            
+        default:
+            // Andere Tasten ignorieren wir einfach
+            break;
+    }
+});
