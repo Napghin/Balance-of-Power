@@ -26,7 +26,8 @@ let rundeErtrag = {
 let produktionProgress = {
     ritter: 0,
     bogenschuetze: 0,
-    skelett: 0
+    skelett: 0,
+    oger: 0 
 };
 
 // 3. BASIS-DATEN
@@ -48,7 +49,8 @@ let daten = {
         maxHp: 100,
         // NEU: Anzahl der gebauten Kasernen für die Finsternis
         kasernen: {
-            skelett: 0
+            skelett: 0,
+	    oger: 0
         },
         aktuelleMasse: 0 // NEU: Für deine UI-Anzeige
     },
@@ -80,6 +82,7 @@ const einheitenStats = {
         kosten: 30,         // Wie viel Gold/Glaube beim Spawnen abgezogen wird
         hp: 10,             // Lebenspunkte (bei 0 wird die Einheit gelöscht)
         masse: 2,           // Gewicht für die Frontlinie (wichtig fürs spätere Schieben)
+	volumen: 1, 	    // Wieviele Slots werden belegt
         schaden: 5,         // Wie viel HP dem Gegner pro Treffer abgezogen werden
         reichweite: 1,      // 1 = Nahkampf, 2+ = Fernkampf (Scan-Distanz in Feldern)
         as: 3,              // Attack Speed: Sekunden Pause zwischen Schlägen (HÖHER = LANGSAMER)
@@ -94,7 +97,7 @@ const einheitenStats = {
         position: 0,        // Startposition auf dem Array
 	einkommen: 0.5,	    // Erzeugtes Einkommen
 	metaWert: 2,	    //erzeugtes Blut/Hoffnung
-        spawnRate: 0.05, // NEU: 0.05 bedeutet 5% pro Sekunde = 20 Sekunden für 1 Ritter
+        spawnRate: 0.05,    // NEU: 0.05 bedeutet 5% pro Sekunde = 20 Sekunden für 1 Ritter
         beschreibung: "Baut eine Kaserne, die stetig schwere Nahkämpfer produziert."
     },
     bogenschuetze: {
@@ -103,6 +106,7 @@ const einheitenStats = {
         kosten: 50,         
         hp: 6,              
         masse: 1,
+	volumen: 1, 
         schaden: 3,         
         reichweite: 4,      
         as: 1,              
@@ -127,6 +131,7 @@ const einheitenStats = {
         kosten: 40,
         hp: 13,
         masse: 1,
+	volumen: 1, 
         schaden: 6,
         reichweite: 1,
         as: 2,           
@@ -144,6 +149,30 @@ const einheitenStats = {
         spawnRate: 0.07,
         beschreibung: "Erweckt stetig billige Krieger aus dem verseuchten Boden."
     
+    },
+    oger: {
+        typ: 'O',
+        seite: 'boese',
+        kosten: 100,
+        hp: 100,
+        masse: 8,
+        volumen: 3,          // NEU: Nimmt 3 der 5 Plätze ein!
+        schaden: 15,
+        reichweite: 1,
+        as: 4,               // Sehr langsamer Angriff...
+        cooldown: 0,
+        setup: 1,
+        aoeBreit: 3,         // ...aber mächtiger Flächenschaden
+        aoeTief: 1,
+        moveWait: 5,         // Bewegt sich sehr träge
+        moveTimer: 0,
+        crowdFactor: 2,
+        auraDruck: 0,
+        position: feldLaenge - 1,
+        einkommen: 1,
+        metaWert: 5,
+        spawnRate: 0.02,    // Dauert sehr lange (1,5% pro Sekunde)
+        beschreibung: "Beschwört einen gigantischen Titanen, der enorm viel Masse und Platz beansprucht."
     }
 
 };
@@ -176,7 +205,8 @@ function autoSpawnEinheit(name) {
     let slotIdx = (seite === 'gut') ? 0 : feldLaenge - 1;
 
     // BUGFIX 2: Prüfen, ob der Burghof schon voll ist (Maximal 5 Einheiten)
-    if (schlachtfeld[slotIdx].length >= 5) {
+    let benoetigtesVolumen = stats.volumen || 1;
+    if (getSlotVolumen(schlachtfeld[slotIdx]) + benoetigtesVolumen > 5) {
         return false; // Spawn fehlgeschlagen, das Tor ist blockiert!
     }
 
@@ -228,11 +258,13 @@ function kaufeArbeiter(seite) {
 */
 
 function updateUI() {
-    // Ressourcen
+// Ressourcen
+
     document.getElementById('res-gut').innerText = "Glaube: " + Math.floor(daten.gut.res) + " ✝️";
     document.getElementById('res-boese').innerText = "Furcht: " + Math.floor(daten.boese.res) + " 💀";
 
-    // --- BALANCE-RUNEN & LICHT ---
+// --- BALANCE-RUNEN & LICHT ---
+
     const fillGut = document.getElementById('balance-fill-gut');
     const fillBoese = document.getElementById('balance-fill-boese');
 
@@ -247,13 +279,15 @@ function updateUI() {
         fillBoese.style.setProperty('--darkness', darknessFactor.toFixed(2));
     } 
 
-    // Run-Ertrag & Meta Anzeige
+// Run-Ertrag & Meta Anzeige
+
     document.getElementById('run-hoffnung').innerText = Math.floor(rundeErtrag.hoffnung);
     document.getElementById('run-blut').innerText = Math.floor(rundeErtrag.blut);
     document.getElementById('meta-hoffnung').innerText = metaProgress.hoffnungGesamt;
     document.getElementById('meta-blut').innerText = metaProgress.blutGesamt;
 
-    // SCHLACHTFELD Aktualisieren
+// SCHLACHTFELD Aktualisieren
+
     const display = document.getElementById('battle-display');
     display.innerHTML = ""; 
 
@@ -261,51 +295,88 @@ function updateUI() {
         let slotDiv = document.createElement('div');
         slotDiv.className = 'slot';
 
-        for (let ebene = 4; ebene >= 0; ebene--) {
+        // 1. Volumen berechnen: Wie viel Platz ist schon weg?
+        let belegtesVolumen = getSlotVolumen(schlachtfeld[i]);
+        let freiesVolumen = 5 - belegtesVolumen;
+        if (freiesVolumen < 0) freiesVolumen = 0; // Sicherheits-Check
+
+        // 2. Zuerst malen wir NUR die Punkte, die auch WIRKLICH frei sind (von oben nach unten)
+        for (let v = 0; v < freiesVolumen; v++) {
             let punkt = document.createElement('div');
             punkt.className = 'einheit-punkt';
             
-            // SICHERHEITS-CHECK gegen Abstürze!
-            if (schlachtfeld[i] && schlachtfeld[i][ebene]) {
-                let e = schlachtfeld[i][ebene];
-
-                if (e.wurdeGetroffen) {
-                    punkt.classList.add('hit-flash'); 
-                    e.wurdeGetroffen = false; 
-                }
-
-                let aktuelleHp = (e.hp !== undefined) ? e.hp : 10;
-                let maxHp = e.maxHp || 10; 
-                let hpProzent = aktuelleHp / maxHp;
-                if (isNaN(hpProzent) || hpProzent < 0) hpProzent = 0;
-                punkt.style.opacity = Math.max(0.25, hpProzent);
-
-                if (e.typ) {
-                    punkt.innerText = e.typ.charAt(0).toUpperCase(); 
-                } else {
-                    punkt.innerText = "?";
-                }
-                punkt.style.color = (e.seite === 'gut') ? '#55aaff' : '#ff5555';
-                punkt.style.fontWeight = "bold";
-
+            if (i === 0) {
+                punkt.innerText = "•"; 
+                punkt.style.color = "rgba(0, 116, 217, 0.7)"; 
+            } else if (i === feldLaenge - 1) {
+                punkt.innerText = "•";
+                punkt.style.color = "rgba(255, 65, 54, 0.7)"; 
             } else {
-                if (i === 0) {
-                    punkt.innerText = "•"; 
-                    punkt.style.color = "rgba(0, 116, 217, 0.7)"; 
-                } else if (i === feldLaenge - 1) {
-                    punkt.innerText = "•";
-                    punkt.style.color = "rgba(255, 65, 54, 0.7)"; 
-                } else {
-                    punkt.innerText = ".";
-                    punkt.style.color = "#444";
-                }
+                punkt.innerText = ".";
+                punkt.style.color = "#444";
             }
             slotDiv.appendChild(punkt);
         }
+
+        // 3. Dann malen wir die tatsächlichen Einheiten (von hinten nach vorne im Array = von oben nach unten im UI)
+        for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
+            let e = schlachtfeld[i][j];
+            let punkt = document.createElement('div');
+            punkt.className = 'einheit-punkt';
+
+            if (e.wurdeGetroffen) {
+                punkt.classList.add('hit-flash'); 
+                e.wurdeGetroffen = false; 
+            }
+
+            let aktuelleHp = (e.hp !== undefined) ? e.hp : 10;
+            let maxHp = e.maxHp || 10; 
+            let hpProzent = aktuelleHp / maxHp;
+            if (isNaN(hpProzent) || hpProzent < 0) hpProzent = 0;
+            punkt.style.opacity = Math.max(0.25, hpProzent);
+
+            if (e.typ) {
+                punkt.innerText = e.typ.charAt(0).toUpperCase(); 
+            } else {
+                punkt.innerText = "?";
+            }
+            punkt.style.color = (e.seite === 'gut') ? '#55aaff' : '#ff5555';
+            punkt.style.fontWeight = "bold";
+
+            // --- NEU: DYNAMISCHE TITANEN-VISUALISIERUNG ---
+            let vol = e.volumen || 1;
+            if (vol > 1) {
+                // Titanen werden als massiver Block dargestellt
+                punkt.style.display = "flex";
+                punkt.style.alignItems = "center";      // Zentriert das O vertikal
+                punkt.style.justifyContent = "center";  // Zentriert das O horizontal
+                
+                // Ein Standard-Punkt ist ca. 1.2em hoch. Wir multiplizieren das mit dem Volumen!
+                punkt.style.height = `calc(${vol} * 1.2em)`; 
+                punkt.style.width = "100%"; 
+                
+                // Dunkelroter, furchteinflößender Block
+                punkt.style.backgroundColor = (e.seite === 'gut') ? "rgba(20, 100, 180, 0.4)" : "rgba(180, 20, 20, 0.4)"; 
+                punkt.style.borderRadius = "3px";
+                punkt.style.margin = "1px 0"; 
+                punkt.style.boxShadow = (e.seite === 'gut') ? "0 0 8px rgba(85, 170, 255, 0.5)" : "0 0 8px rgba(255, 85, 85, 0.5)";
+            }
+
+            slotDiv.appendChild(punkt);
+        }
+
         display.appendChild(slotDiv);
     }
 
-    // --- BUTTONS AUSGRAUEN ---
+// BASIS-HP ANZEIGEN
+
+    const visualBaseGut = document.querySelector('.base-gut');
+    const visualBaseBoese = document.querySelector('.base-boese');
+    if (visualBaseGut) visualBaseGut.innerText = daten.gut.hp + " / " + daten.gut.maxHp;
+    if (visualBaseBoese) visualBaseBoese.innerText = daten.boese.hp + " / " + daten.boese.maxHp;
+
+// --- BUTTONS AUSGRAUEN ---
+
     let btnRitter = document.getElementById('btn-ritter');
     if (btnRitter) btnRitter.disabled = (daten.gut.res < einheitenStats.ritter.kosten);
 
@@ -315,24 +386,11 @@ function updateUI() {
     let btnBogen = document.getElementById('btn-bogenschuetze');
     if (btnBogen) btnBogen.disabled = (daten.gut.res < einheitenStats.bogenschuetze.kosten);
 
-// BASIS-HP ANZEIGEN
-    const visualBaseGut = document.querySelector('.base-gut');
-    const visualBaseBoese = document.querySelector('.base-boese');
-    if (visualBaseGut) visualBaseGut.innerText = daten.gut.hp + " / " + daten.gut.maxHp;
-    if (visualBaseBoese) visualBaseBoese.innerText = daten.boese.hp + " / " + daten.boese.maxHp;
-
-// --- Debug-Anzeigen ---
-   
-    if(document.getElementById('masse-gut')) {
-    // Schreibt nur noch die nackte, auf eine Nachkommastelle gerundete Zahl in das Span
-    document.getElementById('masse-gut').innerText = Number(daten.gut.aktuelleMasse).toFixed(1);
-    }
-    if(document.getElementById('masse-boese')) {
-        document.getElementById('masse-boese').innerText = Number(daten.boese.aktuelleMasse).toFixed(1);
-    }
-
+    let btnOger = document.getElementById('btn-oger');
+    if (btnOger) btnOger.disabled = (daten.boese.res < einheitenStats.oger.kosten);
 
 // --- ANZEIGE FÜR BUTTONS (Kosten, Bestand, Progress) ---
+
     if(document.getElementById('txt-ritter')) {
         document.getElementById('txt-ritter').innerText = 
             `Ritter-Kaserne (${einheitenStats.ritter.kosten}) | Gebaut: ${daten.gut.kasernen.ritter} [${Math.floor(produktionProgress.ritter * 100)}%]`;
@@ -348,7 +406,13 @@ function updateUI() {
             `Skelett-Friedhof (${einheitenStats.skelett.kosten}) | Gebaut: ${daten.boese.kasernen.skelett} [${Math.floor(produktionProgress.skelett * 100)}%]`;
     }
 
+    if(document.getElementById('txt-oger')) {
+        document.getElementById('txt-oger').innerText = 
+            `Oger-Höhle (${einheitenStats.oger.kosten}) | Gebaut: ${daten.boese.kasernen.oger} [${Math.floor((produktionProgress.oger || 0) * 100)}%]`;
+    }
+
 // --- TOOLTIPS DYNAMISCH GENERIEREN (Lore + Stats) ---
+
     function generiereTooltip(stats) {
         // Die Rate in Prozent umrechnen (z.B. 0.05 -> 5)
         let prozentRate = Math.round(stats.spawnRate * 100);
@@ -367,6 +431,8 @@ function updateUI() {
             </span>`;
     }
 
+// Tooltips	
+
     if(document.getElementById('tt-ritter')) {
         document.getElementById('tt-ritter').innerHTML = generiereTooltip(einheitenStats.ritter);
     }
@@ -376,6 +442,20 @@ function updateUI() {
     if(document.getElementById('tt-skelett')) {
         document.getElementById('tt-skelett').innerHTML = generiereTooltip(einheitenStats.skelett);
     }
+    if(document.getElementById('tt-oger')) {
+        document.getElementById('tt-oger').innerHTML = generiereTooltip(einheitenStats.oger);
+    }	
+
+// --- Debug-Anzeigen ---
+   
+    if(document.getElementById('masse-gut')) {
+    // Schreibt nur noch die nackte, auf eine Nachkommastelle gerundete Zahl in das Span
+    document.getElementById('masse-gut').innerText = Number(daten.gut.aktuelleMasse).toFixed(1);
+    }
+    if(document.getElementById('masse-boese')) {
+        document.getElementById('masse-boese').innerText = Number(daten.boese.aktuelleMasse).toFixed(1);
+    }
+
 
 }
 // <-- HIER ENDET updateUI()
@@ -527,7 +607,7 @@ function bewegeEinheiten() {
                         } else {
                             einheit.moveTimer = 1; 
                         }
-                    } else if (zielSlot.length < 5) {
+                    } else if (getSlotVolumen(zielSlot) + (einheit.volumen || 1) <= 5) {
                         schlachtfeld[i].splice(j, 1);
                         zielSlot.push(einheit);
                         einheit.moveTimer = (einheit.moveWait || 2);
@@ -827,6 +907,27 @@ function verarbeiteKasernenProduktion() {
             }
         }
     }
+
+    // 4. OGER (BÖSE)
+    if (daten.boese.kasernen.oger > 0) {
+        let rate = einheitenStats.oger.spawnRate || 0.1;
+        produktionProgress.oger += daten.boese.kasernen.oger * rate;
+        
+        while (produktionProgress.oger >= 1.0) {
+            if (autoSpawnEinheit('oger')) {
+                produktionProgress.oger -= 1.0;
+            } else {
+                break;
+            }
+        }
+    }
+
+}
+
+// Hilfsfunktion: Berechnet das aktuell belegte Volumen in einem Slot
+function getSlotVolumen(slotArray) {
+    if (!slotArray) return 0;
+    return slotArray.reduce((sum, e) => sum + (e.volumen || 1), 0);
 }
 
 aktualisiereButtonTexte()
@@ -849,7 +950,11 @@ window.addEventListener('keydown', function(event) {
         case 'I':
             kaufeKaserne('skelett');
             break;
-            
+ 
+	case 'O':
+            kaufeKaserne('oger');
+            break;
+           
         default:
             // Andere Tasten ignorieren wir einfach
             break;
