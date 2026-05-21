@@ -6,7 +6,7 @@ body {
 }
 
 #game-container {
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -114,12 +114,14 @@ button {
     align-items: center; 
     gap: 20px;
     margin: 15px auto 30px auto;
-    max-width: 1000px;
+    width: 100%;
+    max-width: 1060px; /* Genug Platz für Bar + Texte */
 }
 
 /* Die unsichtbaren Info-Panels */
 .momentum-panel {
-    width: 180px; 
+    flex: 1; /* Beide Panels teilen sich den Restplatz exakt 50/50 */
+    min-width: 0; /* Verhindert, dass langer Text das Panel auseinanderdrückt */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -165,16 +167,34 @@ button {
 
 .fill.gut {
     left: 0;
-    background: linear-gradient(to right, #001f3f, #0074D9);
-    box-shadow: inset -8px 0 15px rgba(255,255,255,0.2),
-                0 0 25px rgba(0, 116, 217, 0.8); 
+    /* Neuer, komplexer Verlauf für den Glanz */
+    background: linear-gradient(
+        to right, 
+        #001f3f 0%,
+        #0074D9 40%, 
+        #a6d1f5 50%, /* Heller Glanzstreifen in der Mitte */
+        #0074D9 60%,
+        #001f3f 100%
+    );
+    /* Verstärkter, hochenergetischer Glow */
+    box-shadow: inset -10px 0 20px rgba(255,255,255,0.3),
+                0 0 40px rgba(0, 116, 217, 0.9); 
 }
 
 .fill.boese {
     right: 0;
-    background: linear-gradient(to left, #3e0000, #FF4136);
-    box-shadow: inset 8px 0 15px rgba(0,0,0,0.5),
-                0 0 25px rgba(255, 65, 54, 0.8);
+    /* Neuer, komplexer Verlauf für den Glanz */
+    background: linear-gradient(
+        to left, 
+        #3e0000 0%,
+        #FF4136 40%, 
+        #f5a6a1 50%, /* Heller Glanzstreifen in der Mitte */
+        #FF4136 60%,
+        #3e0000 100%
+    );
+    /* Verstärkter, flackernder Glow */
+    box-shadow: inset 10px 0 20px rgba(0,0,0,0.5),
+                0 0 40px rgba(255, 65, 54, 0.9);
 }
 
 /* Deine PNG-Datei (Die Maske) */
@@ -193,18 +213,20 @@ button {
 .rune-marker {
     position: absolute;
     top: 0;
-    width: 2px;
+    width: 4px;
     height: 100%;
-    background: rgba(255, 215, 0, 0.15); 
+    background: rgba(255, 215, 0, 0.25); 
     z-index: 15; /* Schicht 3: Ganz oben */
 }
 
 /* Der Zeiger in der Mitte */
 .rune-marker.center {
-    width: 4px;
+    width: 2.5px;
     margin-left: -2px;
     background: rgba(255, 215, 0, 0.7);
-    box-shadow: 0 0 10px gold;
+    /* NEU: Ein echter, starker Leuchteffekt */
+    box-shadow: 0 0 20px gold, 0 0 5px white; 
+    border-radius: 2px; 
     transition: left 0.4s cubic-bezier(0.25, 0.1, 0.25, 1); /* Zeiger bewegt sich weich */
 }
 
@@ -347,4 +369,15 @@ button:hover .tooltip {
     0% { opacity: 1; transform: translateY(0) scale(1); }
     50% { transform: translateY(-25px) scale(1.3); }
     100% { opacity: 0; transform: translateY(-40px) scale(1); }
+}
+
+/* --- NEU: ZEIGER PULS ANIMATION --- */
+@keyframes pointerPulse {
+    0% { box-shadow: 0 0 20px gold, 0 0 5px white; transform: scaleX(1); }
+    50% { box-shadow: 0 0 40px gold, 0 0 10px white; transform: scaleX(1.5); }
+    100% { box-shadow: 0 0 20px gold, 0 0 5px white; transform: scaleX(1); }
+}
+
+.pointer-pulse {
+    animation: pointerPulse 0.4s ease-out;
 }

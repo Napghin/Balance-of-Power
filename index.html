@@ -17,7 +17,6 @@
 </div>
     
 <div id="game-container">
-    <div class="balance-title">Balance of Power</div>
     
     <div class="balance-shrine-container">
         
@@ -89,6 +88,13 @@
             <div class="tooltip" id="tt-bogenschuetze">Lade Info...</div>
         </button>
 
+        <button id="btn-priester" onclick="kaufeKaserne('priester')" class="unit-btn">
+            <img src="icon-priester.png" class="btn-icon" alt="">
+            <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[E]</span>
+            <span id="txt-priester">Priester-Schrein</span> 
+            <div class="tooltip" id="tt-priester">Lade Info...</div>
+        </button>
+
     </div>
 
     <div class="faction red" id="boese">
@@ -113,6 +119,7 @@
         </button>
         
         <button id="btn-oger" onclick="kaufeKaserne('oger')" class="unit-btn">
+            <img src="icon-oger.png" class="btn-icon" alt="">
             <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[O]</span>
              <span id="txt-oger">Oger-Höhle</span> 
             <div class="tooltip" id="tt-oger">Lade Info...</div>
