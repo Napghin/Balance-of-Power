@@ -19,10 +19,36 @@
 <div id="game-container">
     <div class="balance-title">Balance of Power</div>
     
-    <div class="balance-runen-wrapper">
-        <img src="runen.png" class="runen-maske" alt="Runen">
-        <div id="balance-fill-gut" class="fill gut"></div>
-        <div id="balance-fill-boese" class="fill boese"></div>
+    <div class="balance-shrine-container">
+        
+        <div class="momentum-panel gut-panel">
+            <div id="buffs-gut" class="active-buffs"></div>
+        </div>
+        
+        <div class="balance-runen-wrapper">
+            <div id="balance-fill-gut" class="fill gut"></div>
+            
+            <div id="balance-fill-boese" class="fill boese"></div>
+            
+            <img src="runen_maske_neu.png" class="runen-maske" alt="Runen Balance">
+            
+            <div class="rune-marker" style="left: 10%;"></div>
+            <div class="rune-marker" style="left: 20%;"></div>
+            <div class="rune-marker" style="left: 30%;"></div>
+            <div class="rune-marker" style="left: 40%;"></div>
+            
+            <div id="balance-pointer" class="rune-marker center" style="left: 50%;"></div>
+            
+            <div class="rune-marker" style="left: 60%;"></div>
+            <div class="rune-marker" style="left: 70%;"></div>
+            <div class="rune-marker" style="left: 80%;"></div>
+            <div class="rune-marker" style="left: 90%;"></div>
+        </div>
+
+        <div class="momentum-panel boese-panel">
+            <div id="buffs-boese" class="active-buffs"></div>
+        </div>
+        
     </div>
  
 <div class="battle-wrapper">
@@ -86,7 +112,7 @@
             <div class="tooltip" id="tt-skelett">Lade Info...</div>
         </button>
         
-	<button id="btn-oger" onclick="kaufeKaserne('oger')" class="unit-btn">
+        <button id="btn-oger" onclick="kaufeKaserne('oger')" class="unit-btn">
             <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[O]</span>
              <span id="txt-oger">Oger-Höhle</span> 
             <div class="tooltip" id="tt-oger">Lade Info...</div>

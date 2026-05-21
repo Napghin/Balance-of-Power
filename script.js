@@ -279,21 +279,66 @@ function updateUI() {
     document.getElementById('res-gut').innerText = "Glaube: " + Math.floor(daten.gut.res) + " ✝️";
     document.getElementById('res-boese').innerText = "Furcht: " + Math.floor(daten.boese.res) + " 💀";
 
-// --- BALANCE-RUNEN & LICHT ---
-
+// --- BALANCE-BAR & TIERED BUFFS ---
     const fillGut = document.getElementById('balance-fill-gut');
     const fillBoese = document.getElementById('balance-fill-boese');
 
     if (fillGut && fillBoese) {
+        // Die visuelle Bar-Breite unter der Steinmaske anpassen
         fillGut.style.width = daten.balance + "%";
         fillBoese.style.width = (100 - daten.balance) + "%";
 
-        let intensityFactor = daten.balance / 100;
-        fillGut.style.setProperty('--intensity', intensityFactor.toFixed(2));
+        // --- NEU: GESTAFFELTE BUFFS (TIERS) BERECHNEN ---
+        let buffsGut = [];
+        let buffsBoese = [];
+        
+        // Momentum im Hintergrund für die Kampf-Engine speichern (0 = kein Buff)
+        daten.gut.momentum = 0;
+        daten.boese.momentum = 0;
 
-        let darknessFactor = 1 - (daten.balance / 100);
-        fillBoese.style.setProperty('--darkness', darknessFactor.toFixed(2));
-    } 
+        // GUT ist im Vorteil (Balance drängt nach rechts)
+        if (daten.balance >= 55) {
+            buffsGut.push("⚔️ +5% Krit. Treffer");
+            daten.gut.momentum = 1;
+        }
+        if (daten.balance >= 60) {
+            buffsGut.push("💨 + Tempo");
+            daten.gut.momentum = 2;
+        }
+        if (daten.balance >= 65) {
+            buffsGut.push("🔥 +15% Schaden");
+            daten.gut.momentum = 3;
+        }
+
+        // BÖSE ist im Vorteil (Balance drängt nach links)
+        if (daten.balance <= 45) {
+            buffsBoese.push("⚔️ +5% Krit. Treffer");
+            daten.boese.momentum = 1;
+        }
+        if (daten.balance <= 40) {
+            buffsBoese.push("💨 + Tempo");
+            daten.boese.momentum = 2;
+        }
+        if (daten.balance <= 35) {
+            buffsBoese.push("🔥 +15% Schaden");
+            daten.boese.momentum = 3;
+        }
+
+        // Die neuen IDs aus unserem entschlackten HTML
+        const boxGut = document.getElementById('buffs-gut');
+        const boxBoese = document.getElementById('buffs-boese');
+
+        if (boxGut && boxBoese) {
+            // Arrays mit HTML-Zeilenumbrüchen (<br>) verbinden, damit sie schön untereinander stehen
+            boxGut.innerHTML = buffsGut.length > 0 ? buffsGut.join('<br>') : "";
+            boxBoese.innerHTML = buffsBoese.length > 0 ? buffsBoese.join('<br>') : "";
+        }
+	// Der Zeiger wandert jetzt exakt mit dem aktuellen Prozentwert mit!
+	const pointer = document.getElementById('balance-pointer');
+	if (pointer) {
+    	pointer.style.left = daten.balance + "%";
+	}
+    }
 
 // Run-Ertrag & Meta Anzeige
 
