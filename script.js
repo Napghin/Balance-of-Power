@@ -79,13 +79,15 @@ const einheitenStats = {
     ritter: {
         typ: 'R',           // Das Symbol auf dem Spielfeld (Buchstabe)
         seite: 'gut',       // Bestimmt die Marschrichtung (gut = rechts, boese = links)
-        kosten: 30,         // Wie viel Gold/Glaube beim Spawnen abgezogen wird
+        kosten: 40,         // Wie viel Gold/Glaube beim Spawnen abgezogen wird
         hp: 10,             // Lebenspunkte (bei 0 wird die Einheit gelöscht)
         masse: 2,           // Gewicht für die Frontlinie (wichtig fürs spätere Schieben)
 	volumen: 1, 	    // Wieviele Slots werden belegt
         schaden: 5,         // Wie viel HP dem Gegner pro Treffer abgezogen werden
         reichweite: 1,      // 1 = Nahkampf, 2+ = Fernkampf (Scan-Distanz in Feldern)
         as: 3,              // Attack Speed: Sekunden Pause zwischen Schlägen (HÖHER = LANGSAMER)
+	critChance: 0.1,    // 10% Chance
+        critMult: 2.0,      // Doppelter Schaden
         cooldown: 0,        // Interner Zähler: Muss auf 0 sein, damit die Einheit zuschlägt
         setup: 0,           // Wartezeit nach jeder Bewegung, bevor Angriff möglich (Zielen)
         aoeBreit: 1,        // Wie viele Gegner IM selben Feld gleichzeitig getroffen werden
@@ -97,7 +99,8 @@ const einheitenStats = {
         position: 0,        // Startposition auf dem Array
 	einkommen: 0.5,	    // Erzeugtes Einkommen
 	metaWert: 2,	    //erzeugtes Blut/Hoffnung
-        spawnRate: 0.05,    // NEU: 0.05 bedeutet 5% pro Sekunde = 20 Sekunden für 1 Ritter
+        spawnRate: 0.04,    // NEU: 0.05 bedeutet 5% pro Sekunde = 20 Sekunden für 1 Ritter
+	belagerung: 2, 	    // NEU: Richtet 2 Schaden pro Takt an der bösen Basis an
         beschreibung: "Baut eine Kaserne, die stetig schwere Nahkämpfer produziert."
     },
     bogenschuetze: {
@@ -109,7 +112,9 @@ const einheitenStats = {
 	volumen: 1, 
         schaden: 3,         
         reichweite: 4,      
-        as: 1,              
+        as: 1,    
+	critChance: 0.2,  
+        critMult: 1.5,          
         cooldown: 0,
         setup: 2,           
         aoeBreit: 1,
@@ -122,6 +127,7 @@ const einheitenStats = {
 	einkommen: 0.5,
 	metaWert: 2,
         spawnRate: 0.03,
+	belagerung: 1,
         beschreibung: "Errichtet einen Schießstand für Fernkämpfer."
 
     },
@@ -134,7 +140,9 @@ const einheitenStats = {
 	volumen: 1, 
         schaden: 6,
         reichweite: 1,
-        as: 2,           
+        as: 2,   
+	critChance: 0.05, 
+        critMult: 2.0,        
         cooldown: 0,     
         setup: 0,        
         aoeBreit: 1, 
@@ -146,7 +154,8 @@ const einheitenStats = {
         position: feldLaenge - 1,
 	einkommen: 0.5,
 	metaWert: 2,
-        spawnRate: 0.07,
+        spawnRate: 0.04,
+	belagerung: 2,
         beschreibung: "Erweckt stetig billige Krieger aus dem verseuchten Boden."
     
     },
@@ -156,22 +165,25 @@ const einheitenStats = {
         kosten: 100,
         hp: 100,
         masse: 8,
-        volumen: 3,          // NEU: Nimmt 3 der 5 Plätze ein!
-        schaden: 15,
+        volumen: 2,          
+        schaden: 13,
         reichweite: 1,
-        as: 4,               // Sehr langsamer Angriff...
+        as: 4,    
+	critChance: 0.05,
+        critMult: 3.0,           
         cooldown: 0,
         setup: 1,
-        aoeBreit: 3,         // ...aber mächtiger Flächenschaden
+        aoeBreit: 3,         
         aoeTief: 1,
-        moveWait: 5,         // Bewegt sich sehr träge
+        moveWait: 5,         
         moveTimer: 0,
         crowdFactor: 2,
         auraDruck: 0,
         position: feldLaenge - 1,
-        einkommen: 1,
+        einkommen: 1.5,
         metaWert: 5,
-        spawnRate: 0.02,    // Dauert sehr lange (1,5% pro Sekunde)
+        spawnRate: 0.015,
+	belagerung: 7,    
         beschreibung: "Beschwört einen gigantischen Titanen, der enorm viel Masse und Platz beansprucht."
     }
 
@@ -237,6 +249,10 @@ setInterval(() => {
 
     // 4. Wirtschaft & Balance
     generiereEinkommen();
+
+    //Belagerungsschaden
+    verarbeiteBelagerungsSchaden();
+
     berechneFrontlinie(); 
     updateUI();
     checkGameOver();
@@ -639,31 +655,32 @@ function angriff(angreifer, zielSlotIndex) {
             let slot = schlachtfeld[aktuellerSlotIndex];
 
             // 3. AoE-BREITE Schleife (Gegner im Slot durchgehen)
-            // Wir treffen maximal so viele, wie aoeBreit erlaubt
             let trefferZaehler = 0;
             
-            // Wir loopen rückwärts durch den Slot, damit Splicing keine Fehler macht
             for (let e = slot.length - 1; e >= 0; e--) {
                 let opfer = slot[e];
 
-              // Nur Gegner treffen, die auch am Leben sind
                 if (opfer.seite !== angreifer.seite && opfer.hp > 0) {
-                    opfer.hp -= angreifer.schaden;
+                    // --- NEU: KRITISCHER TREFFER CHECK ---
+                    // Wir holen die Chance (Standard 5%, falls nichts eingetragen ist)
+                    let chance = angreifer.critChance || 0.05; 
+                    let isCrit = Math.random() < chance;
                     
-                    // Feedback für den Spieler
+                    // Schaden berechnen
+                    let finalerSchaden = angreifer.schaden;
+                    if (isCrit) {
+                        let mult = angreifer.critMult || 2.0;
+                        finalerSchaden = finalerSchaden * mult;
+                    }
+
+                    opfer.hp -= finalerSchaden;
                     opfer.wurdeGetroffen = true; 
-                    zeigeSchaden(angreifer.schaden, aktuellerSlotIndex, angreifer.seite, e);
+                    
+                    // Wir übergeben das isCrit-Flag an die Visualisierung!
+                    zeigeSchaden(finalerSchaden, aktuellerSlotIndex, angreifer.seite, e, isCrit);
                     
                     trefferZaehler++;
 
-                    // DAS HIER WURDE GEÄNDERT:
-                    // Wir prüfen zwar, ob er stirbt (für Logs etc.), 
-                    // aber wir löschen ihn NICHT mehr mit splice!
-                    if (opfer.hp <= 0) {
-                        // console.log("Einheit hat den tödlichen Schlag kassiert, wehrt sich aber noch!");
-                    }
-
-                    // Wenn maximale Breite erreicht, im Slot aufhören
                     if (trefferZaehler >= angreifer.aoeBreit) break;
                 }
             }
@@ -674,7 +691,7 @@ function angriff(angreifer, zielSlotIndex) {
     angreifer.cooldown = angreifer.as;
 }
 
-function zeigeSchaden(schaden, slotIndex, angreiferSeite, ebene) {
+function zeigeSchaden(schaden, slotIndex, angreiferSeite, ebene, isCrit = false) {
     const display = document.getElementById('battle-display');
     const wrapper = document.querySelector('.battle-wrapper');
     if (!display || !wrapper) return;
@@ -687,21 +704,29 @@ function zeigeSchaden(schaden, slotIndex, angreiferSeite, ebene) {
     const wrapperRect = wrapper.getBoundingClientRect();
 
     const flText = document.createElement('div');
-    flText.innerText = "-" + Math.floor(schaden);
     flText.className = 'schaden-text';
     
-    if (angreiferSeite === 'gut') {
-        flText.style.color = "#ffffff";
-        flText.style.textShadow = "0px 0px 8px #55aaff, 2px 2px 0px black";
+    // --- NEU: CRIT-STYLING ---
+    if (isCrit) {
+        flText.innerText = "-" + Math.floor(schaden) + "!"; // Ausrufezeichen!
+        flText.style.color = "#FFD700"; // Goldenes Leuchten
+        flText.style.fontWeight = "900";
+        flText.style.fontSize = "1.5em"; // Größerer Text
+        flText.style.textShadow = "0px 0px 10px #ffaa00, 2px 2px 0px black";
+        flText.style.zIndex = "10"; // Damit der Crit immer über normalen Zahlen liegt
     } else {
-        flText.style.color = "#ffffff";
-        flText.style.textShadow = "0px 0px 8px #ff5555, 2px 2px 0px black";
+        flText.innerText = "-" + Math.floor(schaden);
+        if (angreiferSeite === 'gut') {
+            flText.style.color = "#ffffff";
+            flText.style.textShadow = "0px 0px 8px #55aaff, 2px 2px 0px black";
+        } else {
+            flText.style.color = "#ffffff";
+            flText.style.textShadow = "0px 0px 8px #ff5555, 2px 2px 0px black";
+        }
     }
 
     flText.style.position = 'absolute';
     
-    // --- NEU: ZUFÄLLIGE STREUUNG (Scatter) ---
-    // Erzeugt einen Wert zwischen -15 und +15 Pixeln
     let randomX = Math.floor(Math.random() * 30) - 15; 
     let randomY = Math.floor(Math.random() * 30) - 15;
 
@@ -709,14 +734,13 @@ function zeigeSchaden(schaden, slotIndex, angreiferSeite, ebene) {
 
     let ebenenOffset = (ebene !== undefined) ? (ebene * 24) : 48; 
     
-    // Die Streuung auch auf die Höhe anrechnen
     flText.style.top = (rect.bottom - wrapperRect.top - ebenenOffset - 35 + randomY) + 'px'; 
 
     wrapper.appendChild(flText);
 
     setTimeout(() => {
         if(flText.parentNode) flText.parentNode.removeChild(flText);
-    }, 1000);
+    }, isCrit ? 2500 : 1000); // Crits bleiben einen Tick länger sichtbar
 }
 
 function entferneToteEinheiten() {
@@ -928,6 +952,33 @@ function verarbeiteKasernenProduktion() {
 function getSlotVolumen(slotArray) {
     if (!slotArray) return 0;
     return slotArray.reduce((sum, e) => sum + (e.volumen || 1), 0);
+}
+
+function verarbeiteBelagerungsSchaden() {
+    // 1. GUTE EINHEITEN BELAGERN DIE BÖSE BASIS
+    // Das letzte Feld für die Guten ist das rechte Ende des Feldes (feldLaenge - 2)
+    let rechtesTorIdx = feldLaenge - 2;
+    for (let einheit of schlachtfeld[rechtesTorIdx]) {
+        if (einheit.seite === 'gut' && einheit.hp > 0) {
+            let schaden = einheit.belagerung || 1;
+            daten.boese.hp -= schaden;
+            
+            // Optionaler Log im Console-Fenster, um zu sehen, ob es klappt:
+            // console.log(`Belagerung! Ein ${einheit.typ} zieht der bösen Basis ${schaden} HP ab.`);
+        }
+    }
+
+    // 2. BÖSE EINHEITEN BELAGERN DIE GUTE BASIS
+    // Das letzte Feld für die Bösen ist das linke Ende des Feldes (Slot 0)
+    let linkesTorIdx = 1;
+    for (let einheit of schlachtfeld[linkesTorIdx]) {
+        if (einheit.seite === 'boese' && einheit.hp > 0) {
+            let schaden = einheit.belagerung || 1;
+            daten.gut.hp -= schaden;
+            
+            // console.log(`Belagerung! Ein ${einheit.typ} zieht der guten Basis ${schaden} HP ab.`);
+        }
+    }
 }
 
 aktualisiereButtonTexte()
