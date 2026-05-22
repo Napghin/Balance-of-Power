@@ -5,6 +5,7 @@ let metaProgress = {
     hoffnungGesamt: 0,
     blutGesamt: 0
 };
+let spielPausiert = false;
 
 try {
     let h = localStorage.getItem('hoffnungGesamt');
@@ -111,7 +112,7 @@ const einheitenStats = {
         schaden: 13, reichweite: 1, as: 4, critChance: 0.05, critMult: 3.0,           
         cooldown: 0, setup: 1, aoeBreit: 3, aoeTief: 1, moveWait: 5, moveTimer: 0,
         crowdFactor: 2, auraDruck: 0, position: feldLaenge - 1, einkommen: 1.5,
-        metaWert: 5, spawnRate: 0.015, belagerung: 7,    
+        metaWert: 5, spawnRate: 0.01, belagerung: 7,    
         beschreibung: "Beschwört einen gigantischen Titanen, der enorm viel Masse und Platz beansprucht."
     }
 };
@@ -207,6 +208,9 @@ function bewegeEinheiten() {
                 let einheit = schlachtfeld[i][j];
                 if (einheit.seite !== r.seite) continue;
 
+                // NEU HINZUGEFÜGT: Stellt sicher, dass Kämpfer/Heiler nicht laufen
+                let aktionAusgefuehrt = false;
+
                 // --- HEILEN ODER ANGREIFEN ---
                 if (einheit.heilung && einheit.heilung > 0) {
                     let heilSlotIndex = -1;
@@ -227,6 +231,7 @@ function bewegeEinheiten() {
 
                     if (heilSlotIndex !== -1) {
                         heileVerbuedete(einheit, heilSlotIndex);
+                        aktionAusgefuehrt = true; // Heiler heilt -> läuft nicht
                     } else {
                         // Der Heiler schaut, ob vor ihm Feinde sind.
                         let feindInSicht = false;
@@ -240,8 +245,9 @@ function bewegeEinheiten() {
                             }
                         }
                         if (feindInSicht) {
-                            // HEILER STOPP: Wir füllen seinen Timer, damit er sich nicht in Gefahr begibt!
+                            // HIER DER FIX: Sag der Engine, dass der Heiler "beschäftigt" ist!
                             einheit.moveTimer = 1; 
+                            aktionAusgefuehrt = true; 
                         }
                     }
                 } else {
@@ -258,6 +264,8 @@ function bewegeEinheiten() {
 
                     if (gegnerSlotIndex !== -1) {
                         angriff(einheit, gegnerSlotIndex);
+                        // HIER VERBESSERT: Wer angreifen WILL, bleibt stehen, auch wenn Cooldown!
+                        aktionAusgefuehrt = true; 
                     } else {
                         let distZurBasis = (einheit.seite === 'gut') ? ((feldLaenge - 1) - i) : (i - 0);
                         if (distZurBasis <= einheit.reichweite) {
@@ -266,15 +274,15 @@ function bewegeEinheiten() {
                                 else daten.gut.hp -= einheit.schaden;
                                 einheit.cooldown = einheit.as;
                             }
-                            // BASIS STOPP: Wer die gegnerische Basis angreift, läuft nicht weiter!
                             einheit.moveTimer = 1;
+                            aktionAusgefuehrt = true; // Basis-Angreifer laufen nicht weiter
                         }
                     }
                 }
 
                 // --- BEWEGUNG & PHYSIK ---
-                // Einheiten, die gerade ihren Heiler/Basis-Stopp bekommen haben, überspringen das hier:
-                if (einheit.moveTimer > 0) continue; 
+                // HIER DER ZWEITE TEIL DES FIXES: Wer was tut, überspringt die Bewegung sofort.
+                if (aktionAusgefuehrt || einheit.moveTimer > 0) continue; 
 
                 let zielIdx = i + r.zielMod;
                 if (zielIdx >= 1 && zielIdx <= feldLaenge - 2) {
@@ -298,7 +306,6 @@ function bewegeEinheiten() {
                             }
                         }
                         
-                        // HIER PASSIERT DIE MAGIE WIEDER!
                         if (masseEigene >= (masseFeind * SCHUB_SCHWELLE)) {
                             dominoSchieben(zielIdx, r.zielMod);
                             schlachtfeld[i].splice(j, 1);
@@ -317,6 +324,7 @@ function bewegeEinheiten() {
         }
     }
 }
+
 
 function heileVerbuedete(heiler, zielSlotIndex) {
     if (heiler.cooldown > 0) return;
@@ -364,6 +372,10 @@ function angriff(angreifer, zielSlotIndex) {
     let richtung = angreifer.seite === 'gut' ? 1 : -1;
     let angriffErfolgreich = false;
 
+    // --- MOMENTUM BERECHNUNG ---
+    let mom = daten[angreifer.seite].momentum;
+    let dmgMulti = 1 + (mom * 0.1); // 10% pro Stufe
+
     for (let t = 0; t < angreifer.aoeTief; t++) {
         let aktuellerSlotIndex = zielSlotIndex + (t * richtung);
 
@@ -375,19 +387,19 @@ function angriff(angreifer, zielSlotIndex) {
                 let opfer = slot[e];
 
                 if (opfer.seite !== angreifer.seite && opfer.hp > 0) {
-                    let mom = daten[angreifer.seite].momentum;
-                    
+                    // --- CRIT BERECHNUNG ---
                     let critBonus = mom >= 2 ? (mom - 1) * 0.05 : 0;
                     let chance = (angreifer.critChance || 0.05) + critBonus; 
                     let isCrit = Math.random() < chance;
                     
-                    let dmgMulti = 1 + (mom * 0.1); 
+                    // Hier berechnen wir den Schaden WIRKLICH
                     let finalerSchaden = angreifer.schaden * dmgMulti;
                     
                     if (isCrit) {
                         finalerSchaden *= (angreifer.critMult || 2.0);
                     }
 
+                    // Schadens-Anwendung
                     opfer.hp -= finalerSchaden;
                     opfer.wurdeGetroffen = true; 
                     
@@ -400,8 +412,10 @@ function angriff(angreifer, zielSlotIndex) {
             }
         }
     }
+    // Setze Cooldown nur, wenn wirklich ein Angriff stattfand
     if (angriffErfolgreich) angreifer.cooldown = angreifer.as;
 }
+
 
 // ==========================================
 // 7. HILFSFUNKTIONEN (Engine & Physik)
@@ -516,6 +530,21 @@ function berechneFrontlinie() {
     frontMitte += (auraDruckGut - auraDruckBoese);
     daten.balance = Math.max(0, Math.min(100, (frontMitte / (feldLaenge - 1)) * 100)); 
 }
+
+// --- NEU: EVENT NACHRICHTEN SENDEN ---
+function zeigeNachricht(text, farbe = "#ddd", rahmenFarbe = "#55aaff") {
+    const eventBox = document.getElementById('event-box');
+    const eventText = document.getElementById('event-text');
+    
+    if (eventBox && eventText) {
+        eventText.innerText = text;
+        eventText.style.color = farbe;
+        eventBox.style.borderLeftColor = rahmenFarbe;
+    }
+}
+
+// Test-Aufruf: Du kannst diese Funktion später überall im Code aufrufen!
+// Beispiel: zeigeNachricht("Ein Oger hat das Schlachtfeld betreten!", "#ff4444", "#ff0000");
 
 // ==========================================
 // 8. UI & VISUAL EFFECTS
@@ -780,14 +809,16 @@ function checkGameOver() {
 
 // DIE ENGINE
 setInterval(() => {
-    bewegeEinheiten();
-    verarbeiteKasernenProduktion();
-    entferneToteEinheiten();
-    generiereEinkommen();
-    verarbeiteBelagerungsSchaden();
-    berechneFrontlinie(); 
-    updateUI();
-    checkGameOver();
+    if (!spielPausiert) {
+        bewegeEinheiten();
+        verarbeiteKasernenProduktion();
+        entferneToteEinheiten();
+        generiereEinkommen();
+        verarbeiteBelagerungsSchaden();
+        berechneFrontlinie(); 
+        updateUI();
+        checkGameOver();
+    }
 }, 1000);
 
 // ==========================================
@@ -802,3 +833,29 @@ window.addEventListener('keydown', function(event) {
         case 'O': kaufeKaserne('oger'); break;
     }
 });
+
+
+
+
+
+// =====================================================================
+// =====================================================================
+//                       11. META SHOP (PHASE 6)
+// =====================================================================
+// =====================================================================
+
+function oeffneShop() {
+    spielPausiert = true; // Spiel friert ein!
+    
+    // NEU: Wir befüllen die Anzeige mit deinen echten Meta-Währungen
+    document.getElementById('shop-meta-hoffnung').innerText = metaProgress.hoffnungGesamt;
+    document.getElementById('shop-meta-blut').innerText = metaProgress.blutGesamt;
+    
+    document.getElementById('shop-modal').classList.remove('shop-hidden');
+    document.body.classList.add('modal-open');
+}
+
+function schließeShop() {
+    document.getElementById('shop-modal').classList.add('shop-hidden');
+    spielPausiert = false; // Spiel läuft weiter!
+}

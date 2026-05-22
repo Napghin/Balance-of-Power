@@ -15,18 +15,26 @@
 <div id="meta-display" style="background: #222; color: white; padding: 10px; text-align: center;">
     In den Äonen gesammelt: ✨ Hoffnung: <span id="meta-hoffnung">0</span> | 🩸 Blut: <span id="meta-blut">0</span>
 </div>
+
+<div class="action-bar">
+    <button id="btn-open-shop" onclick="oeffneShop()" title="Schicksalswaage">
+        ⚖️
+    </button>
+    
+    <div id="event-box">
+        <span id="event-text">Die Schlacht ruht... noch. Warten auf Eingriff.</span>
+    </div>
+</div>
     
 <div id="game-container">
     
     <div class="balance-shrine-container">
-        
         <div class="momentum-panel gut-panel">
             <div id="buffs-gut" class="active-buffs"></div>
         </div>
         
         <div class="balance-runen-wrapper">
             <div id="balance-fill-gut" class="fill gut"></div>
-            
             <div id="balance-fill-boese" class="fill boese"></div>
             
             <img src="runen_maske_neu.png" class="runen-maske" alt="Runen Balance">
@@ -47,84 +55,133 @@
         <div class="momentum-panel boese-panel">
             <div id="buffs-boese" class="active-buffs"></div>
         </div>
-        
     </div>
  
-<div class="battle-wrapper">
-    <div class="visual-base base-gut"></div>
-    
-    <div id="battle-display" style="font-family: monospace; background: #333; color: #fff; padding: 10px; display: flex; overflow-x: auto; min-height: 120px;">
+    <div class="battle-wrapper">
+        <div class="visual-base base-gut"></div>
+        
+        <div id="battle-display" style="font-family: monospace; background: #333; color: #fff; padding: 10px; display: flex; overflow-x: auto; min-height: 120px;">
         </div>
-    
-    <div class="visual-base base-boese"></div>
-</div>
-
-<div class="ui-layout">
-    <div class="faction blue" id="gut">
-        <h2>Orden des Lichts</h2>
-        <p id="res-gut">Glaube: 50</p>
-        <p style="font-size: 0.9em; color: #aaa; margin-top: -10px;">Zuwachs: +<span id="gen-gut">0</span>/s</p>
         
-        <p style="font-size: 0.9em; color: #ffaa00; font-weight: bold; margin-top: -5px;">Front-Druck: <span id="masse-gut">0</span> kg</p>
-        
-        <p>In diesem Zeitalter geschöpfte Hoffnung: 
-            <br> 
-            <span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
-            ✨ <span id="run-hoffnung">0</span>
-            </span>
-        </p>
-        
-        <button id="btn-ritter" onclick="kaufeKaserne('ritter')" class="unit-btn">
-            <img src="icon-ritter.png" class="btn-icon" alt="">
-            <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[Q]</span>
-            <span id="txt-ritter">Ritter-Kaserne</span> 
-            <div class="tooltip" id="tt-ritter">Lade Info...</div>
-        </button>
-
-        <button id="btn-bogenschuetze" onclick="kaufeKaserne('bogenschuetze')" class="unit-btn">
-            <img src="icon-bogen.png" class="btn-icon" alt="">
-            <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[W]</span>
-            <span id="txt-bogenschuetze">Bogen-Kaserne</span> 
-            <div class="tooltip" id="tt-bogenschuetze">Lade Info...</div>
-        </button>
-
-        <button id="btn-priester" onclick="kaufeKaserne('priester')" class="unit-btn">
-            <img src="icon-priester.png" class="btn-icon" alt="">
-            <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[E]</span>
-            <span id="txt-priester">Priester-Schrein</span> 
-            <div class="tooltip" id="tt-priester">Lade Info...</div>
-        </button>
-
+        <div class="visual-base base-boese"></div>
     </div>
 
-    <div class="faction red" id="boese">
-        <h2>Horden der Finsternis</h2>
-        <p id="res-boese">Furcht: 50</p>
-        <p style="font-size: 0.9em; color: #aaa; margin-top: -10px;">Zuwachs: +<span id="gen-boese">0</span>/s</p>
-        
-        <p style="font-size: 0.9em; color: #ffaa00; font-weight: bold; margin-top: -5px;">Front-Druck: <span id="masse-boese">0</span> kg</p>
-        
-        <p>In diesem Zeitalter vergossenes Blut:
-            <br>
-            <span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
-            🩸 <span id="run-blut">0</span>
-            </span>
-        </p>
-        
-        <button id="btn-skelett" onclick="kaufeKaserne('skelett')" class="unit-btn">
-            <img src="icon-skelett.png" class="btn-icon" alt="">
-            <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[I]</span>
-             <span id="txt-skelett">Skelett-Friedhof</span> 
-            <div class="tooltip" id="tt-skelett">Lade Info...</div>
-        </button>
-        
-        <button id="btn-oger" onclick="kaufeKaserne('oger')" class="unit-btn">
-            <img src="icon-oger.png" class="btn-icon" alt="">
-            <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[O]</span>
-             <span id="txt-oger">Oger-Höhle</span> 
-            <div class="tooltip" id="tt-oger">Lade Info...</div>
-        </button>
+    <div class="ui-layout">
+        <div class="faction blue" id="gut">
+            <h2>Orden des Lichts</h2>
+            <p id="res-gut">Glaube: 50</p>
+            <p style="font-size: 0.9em; color: #aaa; margin-top: -10px;">Zuwachs: +<span id="gen-gut">0</span>/s</p>
+            <p style="font-size: 0.9em; color: #ffaa00; font-weight: bold; margin-top: -5px;">Front-Druck: <span id="masse-gut">0</span> kg</p>
+            
+            <p>In diesem Zeitalter geschöpfte Hoffnung: 
+                <br> 
+                <span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
+                ✨ <span id="run-hoffnung">0</span>
+                </span>
+            </p>
+            
+            <button id="btn-ritter" onclick="kaufeKaserne('ritter')" class="unit-btn">
+                <img src="icon-ritter.png" class="btn-icon" alt="">
+                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[Q]</span>
+                <span id="txt-ritter">Ritter-Kaserne</span> 
+                <div class="tooltip" id="tt-ritter">Lade Info...</div>
+            </button>
 
+            <button id="btn-bogenschuetze" onclick="kaufeKaserne('bogenschuetze')" class="unit-btn">
+                <img src="icon-bogen.png" class="btn-icon" alt="">
+                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[W]</span>
+                <span id="txt-bogenschuetze">Bogen-Kaserne</span> 
+                <div class="tooltip" id="tt-bogenschuetze">Lade Info...</div>
+            </button>
+
+            <button id="btn-priester" onclick="kaufeKaserne('priester')" class="unit-btn">
+                <img src="icon-priester.png" class="btn-icon" alt="">
+                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[E]</span>
+                <span id="txt-priester">Priester-Schrein</span> 
+                <div class="tooltip" id="tt-priester">Lade Info...</div>
+            </button>
+        </div>
+
+        <div class="faction red" id="boese">
+            <h2>Horden der Finsternis</h2>
+            <p id="res-boese">Furcht: 50</p>
+            <p style="font-size: 0.9em; color: #aaa; margin-top: -10px;">Zuwachs: +<span id="gen-boese">0</span>/s</p>
+            <p style="font-size: 0.9em; color: #ffaa00; font-weight: bold; margin-top: -5px;">Front-Druck: <span id="masse-boese">0</span> kg</p>
+            
+            <p>In diesem Zeitalter vergossenes Blut:
+                <br>
+                <span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
+                🩸 <span id="run-blut">0</span>
+                </span>
+            </p>
+            
+            <button id="btn-skelett" onclick="kaufeKaserne('skelett')" class="unit-btn">
+                <img src="icon-skelett.png" class="btn-icon" alt="">
+                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[I]</span>
+                 <span id="txt-skelett">Skelett-Friedhof</span> 
+                <div class="tooltip" id="tt-skelett">Lade Info...</div>
+            </button>
+            
+            <button id="btn-oger" onclick="kaufeKaserne('oger')" class="unit-btn">
+                <img src="icon-oger.png" class="btn-icon" alt="">
+                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[O]</span>
+                 <span id="txt-oger">Oger-Höhle</span> 
+                <div class="tooltip" id="tt-oger">Lade Info...</div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="shop-modal" class="shop-hidden">
+    <div class="shop-content">
+        <button id="btn-close-shop" onclick="schließeShop()" title="Shop verlassen">
+            &times;
+        </button>
+        
+        <h2 class="shop-title">Waage des Schicksals</h2>
+        
+        <div class="shop-currency-header">
+            <div class="meta-hoffnung-text">✨ Hoffnung: <span id="shop-meta-hoffnung">0</span></div>
+            <div class="meta-blut-text">🩸 Blut: <span id="shop-meta-blut">0</span></div>
+        </div>
+
+        <div class="waage-container">
+            
+            <button id="node-center-hp-1" class="shop-node node-mitte">
+                <div class="shop-icon-temp">[HP 1]</div>
+            </button>
+            <button id="node-center-hp-2" class="shop-node node-mitte">
+                <div class="shop-icon-temp">[HP 2]</div>
+            </button>
+            <button id="node-center-tempo" class="shop-node node-mitte">
+                <div class="shop-icon-temp">[TEMPO]</div>
+            </button>
+            
+            <button id="node-center-neu" class="shop-node node-mitte">
+                <div class="shop-icon-temp">[NEU]</div>
+            </button>
+            
+            <button id="node-gut-ritter-hp-1" class="shop-node node-blau">
+                <div class="shop-icon-temp">[R-HP]</div>
+            </button>
+            <button id="node-gut-bogen-dmg-1" class="shop-node node-blau">
+                <div class="shop-icon-temp">[B-DMG]</div>
+            </button>
+            <button id="node-gut-priester-heal-1" class="shop-node node-blau">
+                <div class="shop-icon-temp">[P-HEAL]</div>
+            </button>
+
+            <button id="node-boese-skelett-rate-1" class="shop-node node-rot">
+                <div class="shop-icon-temp">[S-RATE]</div>
+            </button>
+            <button id="node-boese-oger-masse-1" class="shop-node node-rot">
+                <div class="shop-icon-temp">[O-MASSE]</div>
+            </button>
+            <button id="node-boese-belagerung-1" class="shop-node node-rot">
+                <div class="shop-icon-temp">[SIEGE]</div>
+            </button>
+            
+        </div>
     </div>
 </div>
 
