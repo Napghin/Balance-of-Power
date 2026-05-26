@@ -59,8 +59,8 @@ let daten = {
 // ==========================================
 // 3. SCHLACHTFELD-STRUKTUR
 // ==========================================
-let feldLaenge = 22;
-let maxBreite = 1; 
+let feldLaenge = 16;        // Kürzere Distanz zwischen den Basen
+let maxSlotVolumen = 8;     // DEINE NEUE BREITE! (Wie viele Einheiten übereinander passen)
 let schlachtfeld = [];
 
 for (let i = 0; i < feldLaenge; i++) {
@@ -80,15 +80,17 @@ const einheitenStats = {
         schaden: 7, reichweite: 1, as: 3, critChance: 0.1, critMult: 2.0,
         cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 1, moveWait: 4, moveTimer: 0,
         crowdFactor: 2, auraDruck: 0, position: 0, einkommen: 0.5, metaWert: 2,
-        spawnRate: 0.04, belagerung: 2,
+        spawnRate: 0.03, belagerung: 2,
+	gebaeudeName: "Ritterburg",
         beschreibung: "Baut eine Kaserne, die stetig schwere Nahkämpfer produziert."
     },
     bogenschuetze: {
         typ: 'B', seite: 'gut', kosten: 50, hp: 6, masse: 1, volumen: 1, 
-        schaden: 3, reichweite: 4, as: 1, critChance: 0.2, critMult: 1.5,
+        schaden: 3, reichweite: 4, as: 1.5, critChance: 0.15, critMult: 1.5,
         cooldown: 0, setup: 2, aoeBreit: 1, aoeTief: 1, moveWait: 5, moveTimer: 0,
         crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.5, metaWert: 2,
-        spawnRate: 0.03, belagerung: 1,
+        spawnRate: 0.025, belagerung: 1,
+	gebaeudeName: "Schießstand",
         beschreibung: "Errichtet einen Schießstand für Fernkämpfer."
     },
     priester: {
@@ -96,7 +98,8 @@ const einheitenStats = {
         schaden: 0, heilung: 3, reichweite: 3, as: 3, critChance: 0.10, critMult: 1.5,           
         cooldown: 0, setup: 1, aoeBreit: 5, aoeTief: 1, moveWait: 3, moveTimer: 0,
         crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.3, metaWert: 3, 
-        spawnRate: 0.015, belagerung: 0,    
+        spawnRate: 0.015, belagerung: 0,
+	gebaeudeName: "Kloster",    
         beschreibung: "Nutzt göttliche Magie, um Verbündete an der Front zu heilen."
     },
     skelett: {
@@ -105,14 +108,16 @@ const einheitenStats = {
         cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 1, moveWait: 2, moveTimer: 0,
         crowdFactor: 1, auraDruck: 0, position: feldLaenge - 1, einkommen: 0.5,
         metaWert: 2, spawnRate: 0.04, belagerung: 2,
+	gebaeudeName: "Skelett-Friedhof",
         beschreibung: "Erweckt stetig billige Krieger aus dem verseuchten Boden."
     },
     oger: {
         typ: 'O', seite: 'boese', kosten: 100, hp: 100, masse: 8, volumen: 2,          
         schaden: 13, reichweite: 1, as: 4, critChance: 0.05, critMult: 3.0,           
         cooldown: 0, setup: 1, aoeBreit: 3, aoeTief: 1, moveWait: 5, moveTimer: 0,
-        crowdFactor: 2, auraDruck: 0, position: feldLaenge - 1, einkommen: 1.5,
-        metaWert: 5, spawnRate: 0.01, belagerung: 7,    
+        crowdFactor: 2, auraDruck: 0, position: feldLaenge - 1, einkommen: 2,
+        metaWert: 5, spawnRate: 0.01, belagerung: 7,   
+	gebaeudeName: "Oger-Höhle", 
         beschreibung: "Beschwört einen gigantischen Titanen, der enorm viel Masse und Platz beansprucht."
     }
 };
@@ -147,7 +152,7 @@ function autoSpawnEinheit(name) {
     let slotIdx = (seite === 'gut') ? 0 : feldLaenge - 1;
 
     let benoetigtesVolumen = stats.volumen || 1;
-    if (getSlotVolumen(schlachtfeld[slotIdx]) + benoetigtesVolumen > 5) {
+    if (getSlotVolumen(schlachtfeld[slotIdx]) + benoetigtesVolumen > maxSlotVolumen) {
         return false; 
     }
 
@@ -176,16 +181,37 @@ function verarbeiteKasernenProduktion() {
     }
 }
 
-// START-ARMEE 
-for (let i = 0; i < 5; i++) {
+// ==========================================
+// START-ARMEE (Zum Testen & Balancen)
+// ==========================================
+// Hier kannst du die Anzahl der Start-Einheiten bequem einstellen:
+let startRitter = 5;
+let startBogenschuetzen = 1;
+
+let startSkelette = 5;
+let startOger = 1;
+
+// --- Spawn für "Die Guten" (Ganz links: Slot 0) ---
+for (let i = 0; i < startRitter; i++) {
     schlachtfeld[0].push(erstelleEinheit('ritter'));
+}
+for (let i = 0; i < startBogenschuetzen; i++) {
+    schlachtfeld[0].push(erstelleEinheit('bogenschuetze'));
+}
+
+// --- Spawn für "Die Bösen" (Ganz rechts: Slot feldLaenge - 1) ---
+for (let i = 0; i < startSkelette; i++) {
     schlachtfeld[feldLaenge - 1].push(erstelleEinheit('skelett'));
+}
+for (let i = 0; i < startOger; i++) {
+    schlachtfeld[feldLaenge - 1].push(erstelleEinheit('oger'));
 }
 
 // ==========================================
 // 6. KAMPF, BEWEGUNG & HEILUNG
 // ==========================================
 function bewegeEinheiten() {
+    // 1. Cooldowns & Timer für alle reduzieren
     for (let i = 0; i < feldLaenge; i++) {
         for (let einheit of schlachtfeld[i]) {
             let mom = daten[einheit.seite].momentum;
@@ -193,6 +219,7 @@ function bewegeEinheiten() {
             
             if (einheit.moveTimer > 0) einheit.moveTimer -= (1 + tempoBonus);
             if (einheit.cooldown > 0) einheit.cooldown -= (1 + tempoBonus);
+            einheit.hatAktionGemacht = false; // Neuer Marker: Hat die Einheit diese Runde schon gekämpft?
         }
     }
 
@@ -202,27 +229,21 @@ function bewegeEinheiten() {
     ];
     const SCHUB_SCHWELLE = 1.33; 
 
+    // ==========================================
+    // PHASE 1: KAMPF & HEILUNG (Simultan!)
+    // ==========================================
     for (let r of richtungen) {
         for (let i = r.start; r.schritt === -1 ? i >= r.ende : i <= r.ende; i += r.schritt) {
             for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
                 let einheit = schlachtfeld[i][j];
                 if (einheit.seite !== r.seite) continue;
 
-                // NEU HINZUGEFÜGT: Stellt sicher, dass Kämpfer/Heiler nicht laufen
-                let aktionAusgefuehrt = false;
-
-                // --- HEILEN ODER ANGREIFEN ---
                 if (einheit.heilung && einheit.heilung > 0) {
                     let heilSlotIndex = -1;
                     for (let dist = 0; dist <= einheit.reichweite; dist++) {
                         let checkIdx = i + (dist * r.zielMod);
                         if (checkIdx >= 0 && checkIdx < feldLaenge) {
-                            let brauchtHeilung = schlachtfeld[checkIdx].some(e => {
-                                if (e.seite !== einheit.seite || e.hp <= 0) return false;
-                                return e.hp < (e.maxHp || 10);
-                            });
-
-                            if (brauchtHeilung) {
+                            if (schlachtfeld[checkIdx].some(e => e.seite === einheit.seite && e.hp > 0 && e.hp < (e.maxHp || 10))) {
                                 heilSlotIndex = checkIdx;
                                 break;
                             }
@@ -231,32 +252,26 @@ function bewegeEinheiten() {
 
                     if (heilSlotIndex !== -1) {
                         heileVerbuedete(einheit, heilSlotIndex);
-                        aktionAusgefuehrt = true; // Heiler heilt -> läuft nicht
+                        einheit.hatAktionGemacht = true; // Heiler blockiert Bewegung
                     } else {
-                        // Der Heiler schaut, ob vor ihm Feinde sind.
                         let feindInSicht = false;
                         for (let dist = 1; dist <= einheit.reichweite; dist++) {
                             let checkIdx = i + (dist * r.zielMod);
-                            if (checkIdx >= 0 && checkIdx < feldLaenge) {
-                                if (schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0)) {
-                                    feindInSicht = true;
-                                    break;
-                                }
+                            if (checkIdx >= 0 && checkIdx < feldLaenge && schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0)) {
+                                feindInSicht = true;
+                                break;
                             }
                         }
                         if (feindInSicht) {
-                            // HIER DER FIX: Sag der Engine, dass der Heiler "beschäftigt" ist!
                             einheit.moveTimer = 1; 
-                            aktionAusgefuehrt = true; 
+                            einheit.hatAktionGemacht = true; 
                         }
                     }
                 } else {
-                    // Angreifer Scan
                     let gegnerSlotIndex = -1;
                     for (let dist = 0; dist <= einheit.reichweite; dist++) {
                         let checkIdx = i + (dist * r.zielMod);
-                        if (checkIdx >= 0 && checkIdx < feldLaenge && 
-                            schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0)) {
+                        if (checkIdx >= 0 && checkIdx < feldLaenge && schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0)) {
                             gegnerSlotIndex = checkIdx;
                             break;
                         }
@@ -264,8 +279,7 @@ function bewegeEinheiten() {
 
                     if (gegnerSlotIndex !== -1) {
                         angriff(einheit, gegnerSlotIndex);
-                        // HIER VERBESSERT: Wer angreifen WILL, bleibt stehen, auch wenn Cooldown!
-                        aktionAusgefuehrt = true; 
+                        einheit.hatAktionGemacht = true; // Angreifer blockiert Bewegung
                     } else {
                         let distZurBasis = (einheit.seite === 'gut') ? ((feldLaenge - 1) - i) : (i - 0);
                         if (distZurBasis <= einheit.reichweite) {
@@ -275,14 +289,26 @@ function bewegeEinheiten() {
                                 einheit.cooldown = einheit.as;
                             }
                             einheit.moveTimer = 1;
-                            aktionAusgefuehrt = true; // Basis-Angreifer laufen nicht weiter
+                            einheit.hatAktionGemacht = true; 
                         }
                     }
                 }
+            }
+        }
+    }
 
-                // --- BEWEGUNG & PHYSIK ---
-                // HIER DER ZWEITE TEIL DES FIXES: Wer was tut, überspringt die Bewegung sofort.
-                if (aktionAusgefuehrt || einheit.moveTimer > 0) continue; 
+    // ==========================================
+    // PHASE 2: BEWEGUNG & PHYSIK
+    // ==========================================
+    // Erst jetzt darf sich bewegen, wer noch nicht gekämpft hat!
+    for (let r of richtungen) {
+        for (let i = r.start; r.schritt === -1 ? i >= r.ende : i <= r.ende; i += r.schritt) {
+            for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
+                let einheit = schlachtfeld[i][j];
+                if (einheit.seite !== r.seite) continue;
+
+                // Wer gekämpft hat oder blockiert ist, bleibt stehen!
+                if (einheit.hatAktionGemacht || einheit.moveTimer > 0) continue; 
 
                 let zielIdx = i + r.zielMod;
                 if (zielIdx >= 1 && zielIdx <= feldLaenge - 2) {
@@ -314,7 +340,7 @@ function bewegeEinheiten() {
                         } else {
                             einheit.moveTimer = 1; 
                         }
-                    } else if (getSlotVolumen(zielSlot) + (einheit.volumen || 1) <= 5) {
+                    } else if (getSlotVolumen(zielSlot) + (einheit.volumen || 1) <= maxSlotVolumen) {
                         schlachtfeld[i].splice(j, 1);
                         zielSlot.push(einheit);
                         einheit.moveTimer = (einheit.moveWait || 2);
@@ -324,7 +350,6 @@ function bewegeEinheiten() {
         }
     }
 }
-
 
 function heileVerbuedete(heiler, zielSlotIndex) {
     if (heiler.cooldown > 0) return;
@@ -633,7 +658,7 @@ function updateUI() {
         let slotDiv = document.createElement('div');
         slotDiv.className = 'slot';
 
-        let freiesVolumen = Math.max(0, 5 - getSlotVolumen(schlachtfeld[i])); 
+        let freiesVolumen = Math.max(0, maxSlotVolumen - getSlotVolumen(schlachtfeld[i])); 
         for (let v = 0; v < freiesVolumen; v++) {
             let punkt = document.createElement('div');
             punkt.className = 'einheit-punkt';
@@ -697,7 +722,9 @@ function updateUI() {
         if (btn) btn.disabled = (daten.gut.res < getKosten(u));
         
         let txt = document.getElementById('txt-' + u);
-        if (txt) txt.innerText = `${einheitenStats[u].typ}-Kaserne (${getKosten(u)}) | Gebaut: ${daten.gut.kasernen[u]} [${Math.floor(produktionProgress[u] * 100)}%]`;
+        // HIER NEU: Er zieht sich den exakten Gebäudenamen aus dem Katalog!
+        let gebaeude = einheitenStats[u].gebaeudeName;
+        if (txt) txt.innerText = `${gebaeude} (${getKosten(u)}) | Gebaut: ${daten.gut.kasernen[u]} [${Math.floor(produktionProgress[u] * 100)}%]`;
         
         let tt = document.getElementById('tt-' + u);
         if (tt) tt.innerHTML = generiereTooltip(einheitenStats[u]);
@@ -708,12 +735,16 @@ function updateUI() {
         if (btn) btn.disabled = (daten.boese.res < getKosten(u));
         
         let txt = document.getElementById('txt-' + u);
-        if (txt) txt.innerText = `${einheitenStats[u].typ}-Kaserne (${getKosten(u)}) | Gebaut: ${daten.boese.kasernen[u]} [${Math.floor(produktionProgress[u] * 100)}%]`;
+        // HIER NEU: Das gleiche für die Bösen!
+        let gebaeude = einheitenStats[u].gebaeudeName;
+        if (txt) txt.innerText = `${gebaeude} (${getKosten(u)}) | Gebaut: ${daten.boese.kasernen[u]} [${Math.floor(produktionProgress[u] * 100)}%]`;
         
         let tt = document.getElementById('tt-' + u);
         if (tt) tt.innerHTML = generiereTooltip(einheitenStats[u]);
     });
-} // <-- Hier endet deine updateUI() Funktion
+
+
+} // <-- Hier endet updateUI() Funktion
 
 function zeigeSchaden(schaden, slotIndex, angreiferSeite, ebene, isCrit = false) {
     const display = document.getElementById('battle-display');
@@ -810,17 +841,16 @@ function checkGameOver() {
 // DIE ENGINE
 setInterval(() => {
     if (!spielPausiert) {
-        bewegeEinheiten();
+        bewegeEinheiten();               
         verarbeiteKasernenProduktion();
-        entferneToteEinheiten();
+        entferneToteEinheiten();         
         generiereEinkommen();
         verarbeiteBelagerungsSchaden();
         berechneFrontlinie(); 
-        updateUI();
+        updateUI();                      
         checkGameOver();
     }
 }, 1000);
-
 // ==========================================
 // 10. STEUERUNG (HOTKEYS)
 // ==========================================

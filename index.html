@@ -69,34 +69,31 @@
     <div class="ui-layout">
         <div class="faction blue" id="gut">
             <h2>Orden des Lichts</h2>
-            <p id="res-gut">Glaube: 50</p>
-            <p style="font-size: 0.9em; color: #aaa; margin-top: -10px;">Zuwachs: +<span id="gen-gut">0</span>/s</p>
-            <p style="font-size: 0.9em; color: #ffaa00; font-weight: bold; margin-top: -5px;">Front-Druck: <span id="masse-gut">0</span> kg</p>
             
-            <p>In diesem Zeitalter geschöpfte Hoffnung: 
-                <br> 
-                <span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
-                ✨ <span id="run-hoffnung">0</span>
-                </span>
-            </p>
+            <div class="resource-row">
+                <span id="res-gut" class="res-main">Glaube: 50</span>
+                <span class="income-text">(+<span id="gen-gut">0</span>/s)</span>
+            </div>
+            
+            <p class="meta-row">Geschöpfte Hoffnung: <strong style="font-size: 1.1em;">✨ <span id="run-hoffnung">0</span></strong></p>
             
             <button id="btn-ritter" onclick="kaufeKaserne('ritter')" class="unit-btn">
                 <img src="icon-ritter.png" class="btn-icon" alt="">
-                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[Q]</span>
+                <span class="hotkey">[Q]</span>
                 <span id="txt-ritter">Ritter-Kaserne</span> 
                 <div class="tooltip" id="tt-ritter">Lade Info...</div>
             </button>
 
             <button id="btn-bogenschuetze" onclick="kaufeKaserne('bogenschuetze')" class="unit-btn">
                 <img src="icon-bogen.png" class="btn-icon" alt="">
-                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[W]</span>
+                <span class="hotkey">[W]</span>
                 <span id="txt-bogenschuetze">Bogen-Kaserne</span> 
                 <div class="tooltip" id="tt-bogenschuetze">Lade Info...</div>
             </button>
 
             <button id="btn-priester" onclick="kaufeKaserne('priester')" class="unit-btn">
                 <img src="icon-priester.png" class="btn-icon" alt="">
-                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[E]</span>
+                <span class="hotkey">[E]</span>
                 <span id="txt-priester">Priester-Schrein</span> 
                 <div class="tooltip" id="tt-priester">Lade Info...</div>
             </button>
@@ -104,32 +101,30 @@
 
         <div class="faction red" id="boese">
             <h2>Horden der Finsternis</h2>
-            <p id="res-boese">Furcht: 50</p>
-            <p style="font-size: 0.9em; color: #aaa; margin-top: -10px;">Zuwachs: +<span id="gen-boese">0</span>/s</p>
-            <p style="font-size: 0.9em; color: #ffaa00; font-weight: bold; margin-top: -5px;">Front-Druck: <span id="masse-boese">0</span> kg</p>
             
-            <p>In diesem Zeitalter vergossenes Blut:
-                <br>
-                <span style="display: block; text-align: center; width: 100%; font-size: 1.2em;">
-                🩸 <span id="run-blut">0</span>
-                </span>
-            </p>
+            <div class="resource-row">
+                <span id="res-boese" class="res-main">Furcht: 50</span>
+                <span class="income-text">(+<span id="gen-boese">0</span>/s)</span>
+            </div>
+            
+            <p class="meta-row">Vergossenes Blut: <strong style="font-size: 1.1em;">🩸 <span id="run-blut">0</span></strong></p>
             
             <button id="btn-skelett" onclick="kaufeKaserne('skelett')" class="unit-btn">
                 <img src="icon-skelett.png" class="btn-icon" alt="">
-                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[I]</span>
+                <span class="hotkey">[I]</span>
                  <span id="txt-skelett">Skelett-Friedhof</span> 
                 <div class="tooltip" id="tt-skelett">Lade Info...</div>
             </button>
             
             <button id="btn-oger" onclick="kaufeKaserne('oger')" class="unit-btn">
                 <img src="icon-oger.png" class="btn-icon" alt="">
-                <span style="color: #ffd700; font-weight: bold; margin-right: 5px;">[O]</span>
+                <span class="hotkey">[O]</span>
                  <span id="txt-oger">Oger-Höhle</span> 
                 <div class="tooltip" id="tt-oger">Lade Info...</div>
             </button>
         </div>
     </div>
+
 </div>
 
 <div id="shop-modal" class="shop-hidden">

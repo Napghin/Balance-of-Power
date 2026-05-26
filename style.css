@@ -18,16 +18,16 @@ body {
 
 .faction {
     width: 45%;
-    padding: 20px;
+    padding: 15px; /* Kompakter: Vorher 20px */
     border-radius: 10px;
     font-family: 'MedievalSharp', cursive;
-    font-size: 1.1rem;
+    font-size: 1rem; /* Kompakter: Vorher 1.1rem */
 }
 
 .faction h2 {
-    font-size: 1.3rem; 
+    font-size: 1.25rem; /* Kompakter: Vorher 1.3rem */
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 8px; /* Kompakter: Vorher 10px */
 }
 
 .blue h2 { color: #3498db; }
@@ -36,19 +36,51 @@ body {
 .blue { border: 2px solid #3498db; }
 .red { border: 2px solid #e74c3c; }
 
+/* --- NEU: Kompakte Text-Layouts --- */
+.resource-row {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.res-main {
+    font-size: 1.15rem;
+    font-weight: bold;
+}
+
+.income-text {
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+.meta-row {
+    margin: 5px 0 15px 0;
+    font-size: 0.95rem;
+    color: #ccc;
+}
+
+.hotkey {
+    color: #ffd700;
+    font-weight: bold;
+    margin-right: 5px;
+    font-size: 0.9em;
+}
+
 /* --- DIE MAGISCHEN BUTTONS (Kasernen) --- */
 button {
     display: block;
     width: 100%;
-    margin: 12px 0;
-    padding: 12px;
+    margin: 8px 0; /* Kompakter: Vorher 12px */
+    padding: 8px 12px; /* Kompakter: Vorher 12px */
     cursor: pointer;
     background-color: rgba(0, 0, 0, 0.4); 
     color: #fff;
     font-family: 'MedievalSharp', cursive;
-    font-size: 1.1rem;
+    font-size: 1rem; /* Kompakter: Vorher 1.1rem */
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px; /* Kompakter: Vorher 1.5px */
     border-radius: 6px;
     transition: all 0.3s ease; 
 }
@@ -91,7 +123,7 @@ button:disabled .btn-icon {
     width: 100%;
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 }
 
 .game-header img {
@@ -108,7 +140,7 @@ button:disabled .btn-icon {
     align-items: center;
     justify-content: center; 
     gap: 15px; 
-    margin: 15px auto 20px auto; 
+    margin: 5px auto 10px auto; 
     padding: 0 10px;
     width: 100%;
     max-width: 1000px; 
@@ -180,7 +212,7 @@ button:disabled .btn-icon {
     justify-content: center;
     align-items: center; 
     gap: 20px;
-    margin: 15px auto 30px auto;
+    margin: 5px auto 10px auto;
     width: 100%;
     max-width: 1060px; 
 }
@@ -280,7 +312,7 @@ button:disabled .btn-icon {
     display: flex;
     justify-content: center;
     align-items: stretch; 
-    margin: 30px auto;
+    margin: 15px auto;
     width: 95%;
     max-width: 1100px;
     background-color: #333;     
@@ -292,7 +324,7 @@ button:disabled .btn-icon {
 }
 
 .visual-base {
-    width: 110px;               
+    width: 140px;               
     flex-shrink: 0;
     background-size: cover;
     background-position: center;
@@ -304,12 +336,30 @@ button:disabled .btn-icon {
     background-image: url('burg.png');
     box-shadow: inset -20px 0 30px rgba(0, 116, 217, 0.4); 
     border-right: 1px solid #444; 
+    
+    display: flex;
+    justify-content: center;      /* Bleibt: Zentriert den Text links/rechts */
+    align-items: flex-start;      /* ÄNDERUNG: Schiebt den Text ganz nach oben */
+    padding-top: 5px;            /* NEU: Gibt dem Text etwas Abstand zum oberen Rand */
+    
+    font-family: 'MedievalSharp', cursive;
+    font-size: 1.2rem;
+    text-shadow: 2px 2px 4px black;
 }
 
 .base-boese {
     background-image: url('nekropole.png');
     box-shadow: inset 20px 0 30px rgba(255, 65, 54, 0.4);
     border-left: 1px solid #444; 
+    
+    display: flex;
+    justify-content: center;      /* Bleibt: Zentriert den Text links/rechts */
+    align-items: flex-start;      /* ÄNDERUNG: Schiebt den Text ganz nach oben */
+    padding-top: 5px;            /* NEU: Gibt dem Text etwas Abstand zum oberen Rand */
+    
+    font-family: 'MedievalSharp', cursive;
+    font-size: 1.2rem;
+    text-shadow: 2px 2px 4px black;
 }
 
 #battle-display {
@@ -319,16 +369,16 @@ button:disabled .btn-icon {
     display: flex;            
     justify-content: center;  
     align-items: flex-end;    
-    gap: 4px;                 
+    gap: 6px;                 /* Etwas mehr Abstand zwischen den Reihen */
     padding: 20px;
-    min-height: 120px;        
+    min-height: 250px;        /* NEU: Viel höher, damit alle 8 Einheiten Platz haben! */
     font-family: 'Courier New', monospace;
 }
 
 .slot {
     display: flex;
     flex-direction: column;   
-    width: 25px;
+    width: 35px;              /* NEU: Etwas breiter (vorher 25px) */
     background-color: #222;   
     border-radius: 3px;
 }
@@ -487,10 +537,17 @@ body.modal-open { overflow: hidden; }
 
 .waage-container {
     width: 100%;
-    height: 75%;
-    margin-top: 10px;
+    /* NEU: Wir zwingen die Box in ein festes Seitenverhältnis! */
+    /* Ersetze 16 / 9 durch das genaue Format deines Bildes (z.B. 800 / 600) */
+    aspect-ratio: 16 / 9; 
+    
+    /* Wir begrenzen die maximale Höhe, damit es im Modal nicht aus dem Bildschirm ragt */
+    max-height: 60vh;
+    margin: 15px auto 0 auto; 
+    
     background-image: url('shop-bg.jpg'); 
-    background-size: contain;
+    /* NEU: Cover füllt die Box jetzt perfekt aus, weil die Box das gleiche Format hat! */
+    background-size: cover; 
     background-position: center;
     background-repeat: no-repeat;
     position: relative; 
