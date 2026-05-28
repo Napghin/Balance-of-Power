@@ -1069,3 +1069,13 @@ function kaufeKnoten(id, kostenH, kostenB, voraussetzungen) {
         alert("Nicht genug Ressourcen!");
     }
 }
+
+// ==========================================
+// 12. ENTWICKLER-TOOLS (Hard Reset)
+// ==========================================
+function resetSpeicher() {
+    if (confirm("Willst du wirklich deinen kompletten Fortschritt (Geld & Skills) löschen? Dies kann nicht rückgängig gemacht werden!")) {
+        localStorage.clear(); // Löscht den kompletten Speicher
+        location.reload();    // Lädt die Seite sofort neu
+    }
+}
