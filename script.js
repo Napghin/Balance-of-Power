@@ -66,6 +66,8 @@ try {
     console.error("Speicher-Fehler ignoriert: Browser-Datenbank ist korrupt.");
 }
 
+berechneMetaBuffs();
+
 // Eine zentrale Funktion, um ALLES zu speichern
 function speichereMeta() {
     localStorage.setItem('hoffnungGesamt', metaProgress.hoffnungGesamt);
@@ -547,16 +549,23 @@ function getSlotVolumen(slotArray) {
 }
 
 function entferneToteEinheiten() {
-    let metaMultiGut = 1 + (daten.gut.metaBuff || 0);
-    let metaMultiBoese = 1 + (daten.boese.metaBuff || 0);
+    // HIER NUTZEN WIR JETZT DIE BERECHNETEN BUFFS AUS DEM SHOP!
+    let multiHoffnung = metaBuffs.hoffnungMulti || 1.0;
+    let multiBlut = metaBuffs.blutMulti || 1.0;
 
     for (let i = 0; i < feldLaenge; i++) {
         for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
             let opfer = schlachtfeld[i][j];
             if (opfer.hp <= 0) {
-                let wertung = opfer.metaWert || 1; 
-                if (opfer.seite === 'boese') rundeErtrag.hoffnung += (wertung * metaMultiGut); 
-                else rundeErtrag.blut += (wertung * metaMultiBoese); 
+                let wertung = opfer.metaWert || 1;
+                
+                // Wir multiplizieren den Drop direkt beim Tod der Einheit!
+                if (opfer.seite === 'boese') {
+                    rundeErtrag.hoffnung += (wertung * multiHoffnung);
+                } else {
+                    rundeErtrag.blut += (wertung * multiBlut);
+                }
+                
                 schlachtfeld[i].splice(j, 1);
             }
         }
@@ -1064,17 +1073,12 @@ function kaufeKnoten(id, kostenH, kostenB, voraussetzungen) {
         // Status setzen
         gekaufteKnoten[id] = true;
         
-        // UI: Button leuchten lassen
-        document.getElementById(id).classList.add('gekauft');
+        // --- DIE WICHTIGEN 3 SCHRITTE ---
+        speichereMeta();       // Sichert das Geld und den Knoten im Browser
+        berechneMetaBuffs();   // Liest den Baum neu aus und aktiviert den 50% Buff!
+        aktualisiereShopUI();  // Lässt den Button & Linie aufleuchten und updatet die Geldanzeige
         
-        // UI: Eventuelle Verbindungslinie leuchten lassen
-        let linieId = "line-" + id.replace('node-', ''); // Logik für Liniennamen
-        if (document.getElementById(linieId)) {
-            document.getElementById(linieId).classList.add('gekauft');
-        }
-
         console.log(id + " erfolgreich gekauft!");
-        // Hier müsste später noch ein "speichern()" kommen
     } else {
         alert("Nicht genug Ressourcen!");
     }
