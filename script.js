@@ -73,7 +73,6 @@ function speichereMeta() {
     localStorage.setItem('gekaufteKnoten', JSON.stringify(gekaufteKnoten));
 }
 
-
 // ==========================================
 // 2. SPIELDATEN & WIRTSCHAFT
 // ==========================================
