@@ -888,4 +888,46 @@ function oeffneShop() {
 function schließeShop() {
     document.getElementById('shop-modal').classList.add('shop-hidden');
     spielPausiert = false; // Spiel läuft weiter!
+    
+    // NEU: Gibt das Scrollen auf der Hauptseite wieder frei!
+    document.body.classList.remove('modal-open');
+}
+
+// --- SHOP INFO-TAFEL STEUERUNG ---
+function zeigeShopInfo(titel, beschreibung, kostenHoffnung = 0, kostenBlut = 0) {
+    document.getElementById('shop-info-title').innerText = titel;
+    document.getElementById('shop-info-desc').innerText = beschreibung;
+    
+    let costsDiv = document.getElementById('shop-info-costs');
+    if (costsDiv) {
+        // Nur anzeigen, wenn mindestens eine Währung mehr als 0 kostet
+        if (kostenHoffnung > 0 || kostenBlut > 0) {
+            let costText = "Kosten: ";
+            
+            if (kostenHoffnung > 0) {
+                costText += `<span style="color: #55aaff; text-shadow: 0 0 8px rgba(0, 116, 217, 0.8);">✨ ${kostenHoffnung} Hoffnung</span> `;
+            }
+            
+            if (kostenHoffnung > 0 && kostenBlut > 0) {
+                costText += ' &nbsp;|&nbsp; '; // Ein schicker Trennstrich
+            }
+            
+            if (kostenBlut > 0) {
+                costText += `<span style="color: #ff5555; text-shadow: 0 0 8px rgba(255, 65, 54, 0.8);">🩸 ${kostenBlut} Blut</span>`;
+            }
+            
+            costsDiv.innerHTML = costText;
+            costsDiv.style.display = "block"; // Sichtbar machen
+        } else {
+            costsDiv.style.display = "none"; // Ausblenden, wenn gratis
+        }
+    }
+}
+
+function versteckeShopInfo() {
+    document.getElementById('shop-info-title').innerText = "Schicksalsknoten";
+    document.getElementById('shop-info-desc').innerText = "Bewege die Maus über ein Symbol, um seine Macht zu offenbaren.";
+    
+    let costsDiv = document.getElementById('shop-info-costs');
+    if (costsDiv) costsDiv.style.display = "none"; // Beim Wegziehen der Maus wieder verstecken
 }
