@@ -10,44 +10,43 @@ let spielPausiert = false;
 // Hier speichern wir, ob ein Knoten gekauft ist (true) oder nicht (false)
 let gekaufteKnoten = {
     // Mitte (Neutral)
-    'node-mitte-1': false,
-    'node-mitte-2': false,
-    'node-mitte-3': false,
-    'node-mitte-4': false,
-    'node-mitte-5': false,
-    'node-mitte-6': false,
-    'node-mitte-7': false,
-    'node-mitte-8': false,
-    'node-mitte-sq-1': false,
+    'node-mitte-1': false, 'node-mitte-2': false, 'node-mitte-3': false,
+    'node-mitte-4': false, 'node-mitte-5': false, 'node-mitte-6': false,
+    'node-mitte-7': false, 'node-mitte-8': false, 'node-mitte-sq-1': false,
 
     // Blau (Hoffnung)
-    'node-blau-1': false,
-    'node-blau-2': false,
-    'node-blau-3': false,
-    'node-blau-4': false,
-    'node-blau-5': false,
-    'node-blau-6': false,
-    'node-blau-7': false,
-    'node-blau-8': false,
-    'node-blau-9': false,
-    'node-blau-sq-1': false,
-    'node-blau-sq-2': false,
+    'node-blau-1': false, 'node-blau-2': false, 'node-blau-3': false,
+    'node-blau-4': false, 'node-blau-5': false, 'node-blau-6': false,
+    'node-blau-7': false, 'node-blau-8': false, 'node-blau-9': false,
+    'node-blau-sq-1': false, 'node-blau-sq-2': false,
 
     // Rot (Blut)
-    'node-rot-1': false,
-    'node-rot-2': false,
-    'node-rot-3': false,
-    'node-rot-4': false,
-    'node-rot-5': false,
-    'node-rot-6': false,
-    'node-rot-7': false,
-    'node-rot-8': false,
-    'node-rot-9': false,
-    'node-rot-sq-1': false,
-    'node-rot-sq-2': false
+    'node-rot-1': false, 'node-rot-2': false, 'node-rot-3': false,
+    'node-rot-4': false, 'node-rot-5': false, 'node-rot-6': false,
+    'node-rot-7': false, 'node-rot-8': false, 'node-rot-9': false,
+    'node-rot-sq-1': false, 'node-rot-sq-2': false
 };
 
+// ==========================================
+// META-BUFFS (Aktive Boni aus dem Shop)
+// ==========================================
+let metaBuffs = {
+    hoffnungMulti: 1.0, // 1.0 = 100% (Normalwert)
+    blutMulti: 1.0      // 1.0 = 100% (Normalwert)
+};
 
+// Diese Funktion liest den Skilltree aus und berechnet alle aktuellen Boni
+function berechneMetaBuffs() {
+    metaBuffs.hoffnungMulti = 1.0;
+    metaBuffs.blutMulti = 1.0;
+
+    if (gekaufteKnoten['node-mitte-1'] === true) {
+        metaBuffs.hoffnungMulti += 0.5; // +50% Hoffnung
+        metaBuffs.blutMulti += 0.5;     // +50% Blut
+    }
+}
+
+// DATEN LADEN
 try {
     let h = localStorage.getItem('hoffnungGesamt');
     let b = localStorage.getItem('blutGesamt');
@@ -56,46 +55,22 @@ try {
     if (h) metaProgress.hoffnungGesamt = parseInt(h) || 0;
     if (b) metaProgress.blutGesamt = parseInt(b) || 0;
     
-    // Wenn schon Skills gekauft wurden, lade sie rein!
     if (gespeicherteKnoten) {
         let geladeneKnoten = JSON.parse(gespeicherteKnoten);
-        // Wir mischen die geladenen Daten mit unseren Standard-Werten
         Object.assign(gekaufteKnoten, geladeneKnoten);
     }
 } catch (e) {
-    console.error("Speicher-Fehler ignoriert: Browser-Datenbank ist korrupt.");
+    console.error("Speicher-Fehler ignoriert.");
 }
 
+// BUFFS AKTIVIEREN
 berechneMetaBuffs();
 
-// Eine zentrale Funktion, um ALLES zu speichern
+// SPEICHERN
 function speichereMeta() {
     localStorage.setItem('hoffnungGesamt', metaProgress.hoffnungGesamt);
     localStorage.setItem('blutGesamt', metaProgress.blutGesamt);
     localStorage.setItem('gekaufteKnoten', JSON.stringify(gekaufteKnoten));
-}
-
-// ==========================================
-// META-BUFFS (Aktive Boni aus dem Shop)
-// ==========================================
-let metaBuffs = {
-    hoffnungMulti: 1.0, // 1.0 = 100% (Normalwert)
-    blutMulti: 1.0      // 1.0 = 100% (Normalwert)
-    
-};
-
-// Diese Funktion liest den Skilltree aus und berechnet alle aktuellen Boni
-function berechneMetaBuffs() {
-    // 1. Buffs auf Standard zurücksetzen
-    metaBuffs.hoffnungMulti = 1.0;
-    metaBuffs.blutMulti = 1.0;
-
-    // 2. Prüfen, welche Knoten gekauft sind und Boni addieren
-    if (gekaufteKnoten['node-mitte-1'] === true) {
-        metaBuffs.hoffnungMulti += 0.5; // +50% Hoffnung
-        metaBuffs.blutMulti += 0.5;     // +50% Blut
-    }
-
 }
 
 
