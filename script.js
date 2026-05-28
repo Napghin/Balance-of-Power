@@ -7,15 +7,95 @@ let metaProgress = {
 };
 let spielPausiert = false;
 
+// Hier speichern wir, ob ein Knoten gekauft ist (true) oder nicht (false)
+let gekaufteKnoten = {
+    // Mitte (Neutral)
+    'node-mitte-1': false,
+    'node-mitte-2': false,
+    'node-mitte-3': false,
+    'node-mitte-4': false,
+    'node-mitte-5': false,
+    'node-mitte-6': false,
+    'node-mitte-7': false,
+    'node-mitte-8': false,
+    'node-mitte-sq-1': false,
+
+    // Blau (Hoffnung)
+    'node-blau-1': false,
+    'node-blau-2': false,
+    'node-blau-3': false,
+    'node-blau-4': false,
+    'node-blau-5': false,
+    'node-blau-6': false,
+    'node-blau-7': false,
+    'node-blau-8': false,
+    'node-blau-9': false,
+    'node-blau-sq-1': false,
+    'node-blau-sq-2': false,
+
+    // Rot (Blut)
+    'node-rot-1': false,
+    'node-rot-2': false,
+    'node-rot-3': false,
+    'node-rot-4': false,
+    'node-rot-5': false,
+    'node-rot-6': false,
+    'node-rot-7': false,
+    'node-rot-8': false,
+    'node-rot-9': false,
+    'node-rot-sq-1': false,
+    'node-rot-sq-2': false
+};
+
+
 try {
     let h = localStorage.getItem('hoffnungGesamt');
     let b = localStorage.getItem('blutGesamt');
+    let gespeicherteKnoten = localStorage.getItem('gekaufteKnoten');
     
     if (h) metaProgress.hoffnungGesamt = parseInt(h) || 0;
     if (b) metaProgress.blutGesamt = parseInt(b) || 0;
+    
+    // Wenn schon Skills gekauft wurden, lade sie rein!
+    if (gespeicherteKnoten) {
+        let geladeneKnoten = JSON.parse(gespeicherteKnoten);
+        // Wir mischen die geladenen Daten mit unseren Standard-Werten
+        Object.assign(gekaufteKnoten, geladeneKnoten);
+    }
 } catch (e) {
     console.error("Speicher-Fehler ignoriert: Browser-Datenbank ist korrupt.");
 }
+
+// Eine zentrale Funktion, um ALLES zu speichern
+function speichereMeta() {
+    localStorage.setItem('hoffnungGesamt', metaProgress.hoffnungGesamt);
+    localStorage.setItem('blutGesamt', metaProgress.blutGesamt);
+    localStorage.setItem('gekaufteKnoten', JSON.stringify(gekaufteKnoten));
+}
+
+// ==========================================
+// META-BUFFS (Aktive Boni aus dem Shop)
+// ==========================================
+let metaBuffs = {
+    hoffnungMulti: 1.0, // 1.0 = 100% (Normalwert)
+    blutMulti: 1.0      // 1.0 = 100% (Normalwert)
+    
+};
+
+// Diese Funktion liest den Skilltree aus und berechnet alle aktuellen Boni
+function berechneMetaBuffs() {
+    // 1. Buffs auf Standard zurücksetzen
+    metaBuffs.hoffnungMulti = 1.0;
+    metaBuffs.blutMulti = 1.0;
+
+    // 2. Prüfen, welche Knoten gekauft sind und Boni addieren
+    if (gekaufteKnoten['node-mitte-1'] === true) {
+        metaBuffs.hoffnungMulti += 0.5; // +50% Hoffnung
+        metaBuffs.blutMulti += 0.5;     // +50% Blut
+    }
+
+}
+
 
 // ==========================================
 // 2. SPIELDATEN & WIRTSCHAFT
@@ -56,6 +136,8 @@ let daten = {
     lastBalance: 50
 };
 
+
+
 // ==========================================
 // 3. SCHLACHTFELD-STRUKTUR
 // ==========================================
@@ -88,7 +170,7 @@ const einheitenStats = {
         typ: 'B', seite: 'gut', kosten: 50, hp: 6, masse: 1, volumen: 1, 
         schaden: 3, reichweite: 4, as: 1.5, critChance: 0.15, critMult: 1.5,
         cooldown: 0, setup: 2, aoeBreit: 1, aoeTief: 1, moveWait: 5, moveTimer: 0,
-        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.5, metaWert: 2,
+        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.25, metaWert: 2,
         spawnRate: 0.025, belagerung: 1,
 	gebaeudeName: "Schießstand",
         beschreibung: "Errichtet einen Schießstand für Fernkämpfer."
@@ -107,7 +189,7 @@ const einheitenStats = {
         schaden: 5, reichweite: 1, as: 2, critChance: 0.05, critMult: 2.0,        
         cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 1, moveWait: 2, moveTimer: 0,
         crowdFactor: 1, auraDruck: 0, position: feldLaenge - 1, einkommen: 0.5,
-        metaWert: 2, spawnRate: 0.04, belagerung: 2,
+        metaWert: 2, spawnRate: 0.05, belagerung: 2,
 	gebaeudeName: "Skelett-Friedhof",
         beschreibung: "Erweckt stetig billige Krieger aus dem verseuchten Boden."
     },
@@ -883,6 +965,7 @@ function oeffneShop() {
     
     document.getElementById('shop-modal').classList.remove('shop-hidden');
     document.body.classList.add('modal-open');
+    aktualisiereShopUI();
 }
 
 function schließeShop() {
@@ -930,4 +1013,69 @@ function versteckeShopInfo() {
     
     let costsDiv = document.getElementById('shop-info-costs');
     if (costsDiv) costsDiv.style.display = "none"; // Beim Wegziehen der Maus wieder verstecken
+}
+
+// ==========================================
+// SHOP & SKILLTREE LOGIK
+// ==========================================
+
+// Wird aufgerufen, wenn der Shop geöffnet wird oder das Spiel lädt
+function aktualisiereShopUI() {
+    for (let id in gekaufteKnoten) {
+        let btn = document.getElementById(id);
+        if (!btn) continue; // Falls der Button im HTML noch nicht existiert
+
+        if (gekaufteKnoten[id] === true) {
+            btn.classList.add('gekauft');
+            
+            // Falls es eine Linie zu diesem Punkt gibt, diese auch leuchten lassen
+            // (z.B. "line-mitte-1-zu-2" - du musst im HTML nur die ID der Linie passend benennen!)
+            let linieId = "line-" + id.replace('node-', ''); 
+            let linie = document.getElementById(linieId);
+            if (linie) linie.classList.add('gekauft');
+        }
+    }
+    
+    // Die Anzeige für Blut und Hoffnung im Shop-Header aktualisieren
+    if (document.getElementById('shop-meta-hoffnung')) {
+        document.getElementById('shop-meta-hoffnung').innerText = metaProgress.hoffnungGesamt;
+        document.getElementById('shop-meta-blut').innerText = metaProgress.blutGesamt;
+    }
+}
+
+function kaufeKnoten(id, kostenH, kostenB, voraussetzungen) {
+    // 1. Ist es schon gekauft?
+    if (gekaufteKnoten[id]) return;
+
+    // 2. Prüfung der Voraussetzungen
+    for (let vor of voraussetzungen) {
+        if (!gekaufteKnoten[vor]) {
+            alert("Du musst zuerst den vorherigen Skill freischalten!");
+            return;
+        }
+    }
+
+    // 3. Prüfung der Ressourcen (aus metaProgress)
+    if (metaProgress.hoffnungGesamt >= kostenH && metaProgress.blutGesamt >= kostenB) {
+        // Ressourcen abziehen
+        metaProgress.hoffnungGesamt -= kostenH;
+        metaProgress.blutGesamt -= kostenB;
+        
+        // Status setzen
+        gekaufteKnoten[id] = true;
+        
+        // UI: Button leuchten lassen
+        document.getElementById(id).classList.add('gekauft');
+        
+        // UI: Eventuelle Verbindungslinie leuchten lassen
+        let linieId = "line-" + id.replace('node-', ''); // Logik für Liniennamen
+        if (document.getElementById(linieId)) {
+            document.getElementById(linieId).classList.add('gekauft');
+        }
+
+        console.log(id + " erfolgreich gekauft!");
+        // Hier müsste später noch ein "speichern()" kommen
+    } else {
+        alert("Nicht genug Ressourcen!");
+    }
 }
