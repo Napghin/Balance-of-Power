@@ -508,7 +508,7 @@ button:hover .tooltip {
 /* Status-Farben */
 .node-blau { border-color: #0074D9 !important; box-shadow: 0 0 10px #0074D9 !important; }
 .node-rot { border-color: #FF4136 !important; box-shadow: 0 0 10px #FF4136 !important; }
-.node-mitte { border-color: #FFDC00 !important; box-shadow: 0 0 10px #FFDC00 !important; }
+.node-mitte { border-color: #888888 !important; box-shadow: 0 0 10px rgba(136, 136, 136, 0.5) !important; }
 
 /* Gekauft-Status */
 .shop-node.gekauft {

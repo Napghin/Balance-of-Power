@@ -960,32 +960,44 @@ function schließeShop() {
 }
 
 // --- SHOP INFO-TAFEL STEUERUNG ---
-function zeigeShopInfo(titel, beschreibung, kostenHoffnung = 0, kostenBlut = 0) {
-    document.getElementById('shop-info-title').innerText = titel;
+function zeigeShopInfo(id, titel, beschreibung, kostenHoffnung = 0, kostenBlut = 0) {
+    let anzeigeTitel = titel;
+    
+    // 1. Text anpassen, wenn gekauft
+    if (gekaufteKnoten[id] === true) {
+        anzeigeTitel += " (bereits gekauft)";
+        document.getElementById('shop-info-title').style.color = "#FFD700"; // Optional: Titel golden machen
+    } else {
+        document.getElementById('shop-info-title').style.color = "white";
+    }
+
+    document.getElementById('shop-info-title').innerText = anzeigeTitel;
     document.getElementById('shop-info-desc').innerText = beschreibung;
     
     let costsDiv = document.getElementById('shop-info-costs');
     if (costsDiv) {
-        // Nur anzeigen, wenn mindestens eine Währung mehr als 0 kostet
-        if (kostenHoffnung > 0 || kostenBlut > 0) {
+        // 2. Kosten verstecken, wenn der Knoten schon gekauft ist
+        if (gekaufteKnoten[id] === true) {
+            costsDiv.style.display = "none";
+        } 
+        // 3. Kosten anzeigen, falls nicht gekauft
+        else if (kostenHoffnung > 0 || kostenBlut > 0) {
             let costText = "Kosten: ";
             
             if (kostenHoffnung > 0) {
                 costText += `<span style="color: #55aaff; text-shadow: 0 0 8px rgba(0, 116, 217, 0.8);">✨ ${kostenHoffnung} Hoffnung</span> `;
             }
-            
             if (kostenHoffnung > 0 && kostenBlut > 0) {
-                costText += ' &nbsp;|&nbsp; '; // Ein schicker Trennstrich
+                costText += ' &nbsp;|&nbsp; ';
             }
-            
             if (kostenBlut > 0) {
                 costText += `<span style="color: #ff5555; text-shadow: 0 0 8px rgba(255, 65, 54, 0.8);">🩸 ${kostenBlut} Blut</span>`;
             }
             
             costsDiv.innerHTML = costText;
-            costsDiv.style.display = "block"; // Sichtbar machen
+            costsDiv.style.display = "block";
         } else {
-            costsDiv.style.display = "none"; // Ausblenden, wenn gratis
+            costsDiv.style.display = "none";
         }
     }
 }
