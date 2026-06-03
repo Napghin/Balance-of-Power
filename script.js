@@ -132,7 +132,7 @@ const einheitenStats = {
     },
     bogenschuetze: {
         typ: 'B', seite: 'gut', kosten: 50, hp: 6, masse: 1, volumen: 1, 
-        schaden: 0, reichweite: 4, as: 1.5, critChance: 0.15, critMult: 1.5,
+        schaden: 3, reichweite: 4, as: 1.5, critChance: 0.15, critMult: 1.5,
         cooldown: 0, setup: 2, aoeBreit: 1, aoeTief: 1, moveWait: 5, moveTimer: 0,
         crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.25, metaWert: 2,
         spawnRate: 0.025, belagerung: 1,
@@ -186,7 +186,7 @@ const einheitenStats = {
     },
     oger: {
         typ: 'O', seite: 'boese', kosten: 100, hp: 100, masse: 15, volumen: 3,          
-        schaden: 0, reichweite: 1, as: 4, critChance: 0.05, critMult: 3.0,           
+        schaden: 13, reichweite: 1, as: 4, critChance: 0.05, critMult: 3.0,           
         cooldown: 0, setup: 1, aoeBreit: 3, aoeTief: 1, moveWait: 5, moveTimer: 0,
         crowdFactor: 2, auraDruck: 0, position: feldLaenge - 1, einkommen: 2,
         metaWert: 5, spawnRate: 0.01, belagerung: 7,   
@@ -204,8 +204,8 @@ const einheitenStats = {
     },
     daemon: {
         typ: 'D', seite: 'boese', kosten: 450, hp: 180, masse: 15, volumen: 5, // Volumen 5!         
-        schaden: 20, reichweite: 2, as: 2.0, critChance: 0.20, critMult: 2.0, // Schneller AS (2.0)           
-        cooldown: 0, setup: 2, aoeBreit: 3, aoeTief: 3, moveWait: 4, moveTimer: 0, 
+        schaden: 6, reichweite: 2, as: 2.0, critChance: 0.20, critMult: 2.0, // Schneller AS (2.0)           
+        cooldown: 0, setup: 2, aoeBreit: 3, aoeTief: 1, moveWait: 4, moveTimer: 0, 
         crowdFactor: 4, auraDruck: 4, position: feldLaenge - 1, einkommen: 0, metaWert: 10, 
         spawnRate: 0.005, belagerung: 15,   
         gebaeudeName: "Höllentor", 
@@ -294,33 +294,118 @@ function verarbeiteKasernenProduktion() {
 // ==========================================
 // START-ARMEE (Zum Testen & Balancen)
 // ==========================================
-// Hier kannst du die Anzahl der Start-Einheiten bequem einstellen:
-let startRitter = 0;
-let startBogenschuetzen = 8;
 
+// Modus-Schalter: 
+// 1 = Feste Anzahl (Nimmt den Wert aus "fest")
+// 0 = Zufällige Anzahl (Nimmt einen zufälligen Wert zwischen "min" und "max")
+let testModus = 0;
+let maxAbweichungProzent = 50;
 
-let startSkelette = 0;
-let startOger = 2;
-let startHexer = 0;
+// --- Konfiguration "Die Guten" ---
+let configGut = {
+    ritter:          { fest: 1, min: 0, max: 4 },
+    bogenschuetze:   { fest: 1, min: 0, max: 3 },
+    lanzentraeger:   { fest: 1, min: 0, max: 2 },
+    priester:        { fest: 1, min: 0, max: 1 },
+    kavallerie:      { fest: 1, min: 0, max: 2 },
+    artillerie:      { fest: 1, min: 0, max: 1 }
+};
 
-// --- Spawn für "Die Guten" (Ganz links: Slot 0) ---
-for (let i = 0; i < startRitter; i++) {
-    schlachtfeld[0].push(erstelleEinheit('ritter'));
-}
-for (let i = 0; i < startBogenschuetzen; i++) {
-    schlachtfeld[0].push(erstelleEinheit('bogenschuetze'));
+// --- Konfiguration "Die Bösen" ---
+let configBoese = {
+    skelett:         { fest: 1, min: 0, max: 4 },
+    oger:            { fest: 1, min: 0, max: 1 },
+    hexer:           { fest: 1, min: 0, max: 2 },
+    werwolf:         { fest: 1, min: 0, max: 2 },
+    assasine:        { fest: 1, min: 0, max: 1 },
+    daemon:          { fest: 1, min: 0, max: 1 }
+};
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// --- Spawn für "Die Bösen" (Ganz rechts: Slot feldLaenge - 1) ---
-for (let i = 0; i < startSkelette; i++) {
-    schlachtfeld[feldLaenge - 1].push(erstelleEinheit('skelett'));
+let balanced = false;
+let generierteGute = [];
+let generierteBoese = [];
+let versuche = 0;
+let maxVersuche = 1000; // Verhindert Endlosschleifen im Browser
+
+while (!balanced && versuche < maxVersuche) {
+    // Arrays und Werte für diesen Durchlauf zurücksetzen
+    generierteGute = [];
+    generierteBoese = [];
+    let wertGut = 0;
+    let wertBoese = 0;
+
+    // --- Würfeln: Die Guten ---
+    for (let typ in configGut) {
+        let anzahl = (testModus === 1) ? configGut[typ].fest : getRandomInt(configGut[typ].min, configGut[typ].max);
+        for (let i = 0; i < anzahl; i++) {
+            let einheit = erstelleEinheit(typ);
+            generierteGute.push(einheit);
+            // HIER ANPASSEN: Ändere "kosten", falls dein Meta-Wert anders heißt (z.B. "wert" oder "punkte")
+            wertGut += (einheit.kosten || 10); 
+        }
+    }
+
+    // --- Würfeln: Die Bösen ---
+    for (let typ in configBoese) {
+        let anzahl = (testModus === 1) ? configBoese[typ].fest : getRandomInt(configBoese[typ].min, configBoese[typ].max);
+        for (let i = 0; i < anzahl; i++) {
+            let einheit = erstelleEinheit(typ);
+            generierteBoese.push(einheit);
+            // HIER ANPASSEN: Ändere "kosten", falls dein Meta-Wert anders heißt
+            wertBoese += (einheit.kosten || 10);
+        }
+    }
+
+    // Wenn Testmodus auf feste Zahlen steht, direkt akzeptieren
+    if (testModus === 1) {
+        balanced = true;
+        break;
+    }
+
+    // --- Balancing prüfen ---
+    let maxWert = Math.max(wertGut, wertBoese);
+    let minWert = Math.min(wertGut, wertBoese);
+    
+    // Verhindert Error, falls beide Seiten 0 kosten
+    if (maxWert === 0) {
+        balanced = true;
+        break; 
+    }
+
+    // Prozentuale Abweichung berechnen
+    let abweichung = (maxWert - minWert) / maxWert; 
+
+   if (abweichung <= (maxAbweichungProzent / 100)) {
+        balanced = true;
+        
+        // Nachricht in deine Eventbox schicken (Grüner Text, grüner Rahmen)
+        zeigeNachricht(
+            `⚔️ Balance gefunden! Gut: ${wertGut} vs. Böse: ${wertBoese} (Abweichung: ${(abweichung * 100).toFixed(1)}%)`, 
+            "#aaffaa", 
+            "#00dd00"
+        );
+    }
+    
+    versuche++;
 }
-for (let i = 0; i < startOger; i++) {
-    schlachtfeld[feldLaenge - 1].push(erstelleEinheit('oger'));
+
+if (versuche >= maxVersuche) {
+    // Warnung in deine Eventbox schicken (Oranger Text, oranger Rahmen)
+    zeigeNachricht(
+        `⚠️ Keine Balance gefunden (Max Versuche). Nehme letzten Wurf.`, 
+        "#ffcc00", 
+        "#ffaa00"
+    );
 }
-for (let i = 0; i < startHexer; i++) {
-    schlachtfeld[feldLaenge - 1].push(erstelleEinheit('hexer'));
-}
+
+// --- Endgültigen Wurf aufs Schlachtfeld setzen ---
+schlachtfeld[0].push(...generierteGute);
+schlachtfeld[feldLaenge - 1].push(...generierteBoese);
+
 
 // ==========================================
 // 6. KAMPF, BEWEGUNG & HEILUNG
