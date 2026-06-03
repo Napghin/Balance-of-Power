@@ -2,9 +2,12 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Balance of Power - Meta v0.05</title>
+    <title>Balance of Power - Meta v0.10</title>
     <link rel="stylesheet" href="style.css?v=0.05">
-    <link href="[https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap](https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap)" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -32,6 +35,7 @@
     
 <div id="game-container">
     
+    <!-- 1. DIE BALANCE-LEISTE -->
     <div class="balance-shrine-container">
         <div class="momentum-panel gut-panel">
             <div id="buffs-gut" class="active-buffs"></div>
@@ -61,6 +65,7 @@
         </div>
     </div>
  
+    <!-- 2. DAS SCHLACHTFELD (Hier lag der Fehler!) -->
     <div class="battle-wrapper">
         <div class="visual-base base-gut"></div>
         
@@ -70,6 +75,7 @@
         <div class="visual-base base-boese"></div>
     </div>
 
+    <!-- 3. DIE BUTTONS -->
     <div class="ui-layout">
         <div class="faction blue" id="gut">
             <h2>Orden des Lichts</h2>
@@ -88,6 +94,13 @@
                 <div class="tooltip" id="tt-ritter">Lade Info...</div>
             </button>
 
+            <button id="btn-lanzentraeger" onclick="kaufeKaserne('lanzentraeger')" class="unit-btn">
+                <img src="icon-lanze.png" class="btn-icon" alt=""> 
+                <span class="hotkey">[T]</span>
+                <span id="txt-lanzentraeger">Kaserne</span> 
+                <div class="tooltip" id="tt-lanzentraeger">Lade Info...</div>
+            </button>
+
             <button id="btn-bogenschuetze" onclick="kaufeKaserne('bogenschuetze')" class="unit-btn">
                 <img src="icon-bogen.png" class="btn-icon" alt="">
                 <span class="hotkey">[W]</span>
@@ -100,6 +113,20 @@
                 <span class="hotkey">[E]</span>
                 <span id="txt-priester">Priester-Schrein</span> 
                 <div class="tooltip" id="tt-priester">Lade Info...</div>
+            </button>
+
+            <button id="btn-kavallerie" onclick="kaufeKaserne('kavallerie')" class="unit-btn">
+                <img src="icon-kavallerie.png" class="btn-icon" alt=""> 
+                <span class="hotkey">[R]</span>
+                <span id="txt-kavallerie">Stall</span> 
+                <div class="tooltip" id="tt-kavallerie">Lade Info...</div>
+            </button>
+
+            <button id="btn-artillerie" onclick="kaufeKaserne('artillerie')" class="unit-btn">
+                <img src="icon-artillerie.png" class="btn-icon" alt=""> 
+                <span class="hotkey">[Z]</span>
+                <span id="txt-artillerie">Belag.-Werkstatt</span> 
+                <div class="tooltip" id="tt-artillerie">Lade Info...</div>
             </button>
         </div>
 
@@ -119,6 +146,20 @@
                  <span id="txt-skelett">Skelett-Friedhof</span> 
                 <div class="tooltip" id="tt-skelett">Lade Info...</div>
             </button>
+
+		<button id="btn-werwolf" onclick="kaufeKaserne('werwolf')" class="unit-btn">
+    			<img src="icon-werwolf.png" class="btn-icon" alt=""> 
+    			<span class="hotkey">[J]</span>
+    			<span id="txt-werwolf">Wolfshöhle</span> 
+    			<div class="tooltip" id="tt-werwolf">Lade Info...</div>
+		</button>
+
+	<button id="btn-assasine" onclick="kaufeKaserne('assasine')" class="unit-btn">
+                <img src="icon-assasine.png" class="btn-icon" alt=""> 
+                <span class="hotkey">[L]</span>
+                 <span id="txt-assasine">Assasinenversteck</span> 
+                <div class="tooltip" id="tt-assasine">Lade Info...</div>
+            </button>
             
             <button id="btn-oger" onclick="kaufeKaserne('oger')" class="unit-btn">
                 <img src="icon-oger.png" class="btn-icon" alt="">
@@ -126,6 +167,22 @@
                  <span id="txt-oger">Oger-Höhle</span> 
                 <div class="tooltip" id="tt-oger">Lade Info...</div>
             </button>
+
+            <button id="btn-hexer" onclick="kaufeKaserne('hexer')" class="unit-btn">
+                <img src="icon-hexer.png" class="btn-icon" alt=""> 
+                <span class="hotkey">[P]</span>
+                 <span id="txt-hexer">Hexenturm</span> 
+                <div class="tooltip" id="tt-hexer">Lade Info...</div>
+            </button>
+
+            <button id="btn-daemon" onclick="kaufeKaserne('daemon')" class="unit-btn">
+                <img src="icon-daemon.png" class="btn-icon" alt=""> 
+                <span class="hotkey">[K]</span>
+                 <span id="txt-daemon">Höllentor</span> 
+                <div class="tooltip" id="tt-daemon">Lade Info...</div>
+            </button>
+
+            
         </div>
     </div>
 
@@ -193,7 +250,7 @@
     </div>
 </div>
         
-    </div> </div> <script src="script.js?v=0.05"></script>
+    </div> </div> <script src="script.js?v=0.10"></script>
 
 </body>
 </html>

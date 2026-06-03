@@ -82,34 +82,22 @@ let rundeErtrag = {
 };
 
 let produktionProgress = {
-    ritter: 0,
-    bogenschuetze: 0,
-    priester: 0,
-    skelett: 0,
-    oger: 0 
+    ritter: 0, bogenschuetze: 0, priester: 0, kavallerie: 0, lanzentraeger: 0, artillerie: 0, 
+    skelett: 0, oger: 0, hexer: 0, daemon: 0, assasine: 0, werwolf: 0                    
 };
 
 let daten = {
     gut: { 
-        res: 100, 
-        hp: 100,      
-        maxHp: 100,
-        kasernen: { ritter: 0, bogenschuetze: 0, priester: 0 },
-        aktuelleMasse: 0,
-        momentum: 0,
-        metaBuff: 0
+        res: 100, hp: 100, maxHp: 100,
+        kasernen: { ritter: 0, bogenschuetze: 0, priester: 0, kavallerie: 0, lanzentraeger: 0, artillerie: 0 },
+        aktuelleMasse: 0, momentum: 0, metaBuff: 0
     },
     boese: { 
-        res: 100, 
-        hp: 100,      
-        maxHp: 100,
-        kasernen: { skelett: 0, oger: 0 },
-        aktuelleMasse: 0,
-        momentum: 0,
-        metaBuff: 0
+        res: 100, hp: 100, maxHp: 100,
+        kasernen: { skelett: 0, oger: 0, hexer: 0, daemon: 0, assasine: 0, werwolf: 0},
+        aktuelleMasse: 0, momentum: 0, metaBuff: 0
     },
-    balance: 50,
-    lastBalance: 50
+    balance: 50, lastBalance: 50
 };
 
 
@@ -144,7 +132,7 @@ const einheitenStats = {
     },
     bogenschuetze: {
         typ: 'B', seite: 'gut', kosten: 50, hp: 6, masse: 1, volumen: 1, 
-        schaden: 3, reichweite: 4, as: 1.5, critChance: 0.15, critMult: 1.5,
+        schaden: 0, reichweite: 4, as: 1.5, critChance: 0.15, critMult: 1.5,
         cooldown: 0, setup: 2, aoeBreit: 1, aoeTief: 1, moveWait: 5, moveTimer: 0,
         crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.25, metaWert: 2,
         spawnRate: 0.025, belagerung: 1,
@@ -160,6 +148,33 @@ const einheitenStats = {
 	gebaeudeName: "Kloster",    
         beschreibung: "Nutzt göttliche Magie, um Verbündete an der Front zu heilen."
     },
+	kavallerie: {
+        typ: 'K', seite: 'gut', kosten: 150, hp: 40, masse: 4, volumen: 2, 
+        schaden: 12, reichweite: 1, as: 2.5, critChance: 0.15, critMult: 2.0,
+        cooldown: 0, setup: 1, aoeBreit: 2, aoeTief: 1, moveWait: 2, moveTimer: 0, // moveWait 2 = sehr schnell
+        crowdFactor: 2, auraDruck: 1, position: 0, einkommen: 1.0, metaWert: 4,
+        spawnRate: 0.02, belagerung: 3,
+        gebaeudeName: "Stall",
+        beschreibung: "Schwere Kavallerie. Extrem schnell, drückt die Front massiv nach vorn."
+    },
+    lanzentraeger: {
+        typ: 'L', seite: 'gut', kosten: 60, hp: 12, masse: 2, volumen: 1, 
+        schaden: 7, reichweite: 2, as: 5, critChance: 0.1, critMult: 2.0, // Reichweite 2!
+        cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 2, moveWait: 4, moveTimer: 0,
+        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.4, metaWert: 2,
+        spawnRate: 0.015, belagerung: 1, // Langsamerer Spawn als Ritter (0.015 statt 0.03)
+        gebaeudeName: "Kaserne",
+        beschreibung: "Nahkämpfer mit Piken. Können sicher aus der zweiten Reihe angreifen."
+    },
+    artillerie: {
+        typ: 'A', seite: 'gut', kosten: 250, hp: 20, masse: 4, volumen: 3, 
+        schaden: 18, reichweite: 5, as: 6, critChance: 0.1, critMult: 2.0, // Hohe RW, langsamer AS
+        cooldown: 0, setup: 3, aoeBreit: 3, aoeTief: 3, moveWait: 6, moveTimer: 0, // Massive AoE
+        crowdFactor: 1, auraDruck: 1, position: 0, einkommen: 0, metaWert: 5,
+        spawnRate: 0.01, belagerung: 10,
+        gebaeudeName: "Belagerungswerkstatt",
+        beschreibung: "Sperrig und langsam, aber schießt massive AoE-Geschosse über das halbe Feld."
+    },
     skelett: {
         typ: 'S', seite: 'boese', kosten: 40, hp: 13, masse: 1, volumen: 1, 
         schaden: 5, reichweite: 1, as: 2, critChance: 0.05, critMult: 2.0,        
@@ -170,13 +185,50 @@ const einheitenStats = {
         beschreibung: "Erweckt stetig billige Krieger aus dem verseuchten Boden."
     },
     oger: {
-        typ: 'O', seite: 'boese', kosten: 100, hp: 100, masse: 8, volumen: 2,          
-        schaden: 13, reichweite: 1, as: 4, critChance: 0.05, critMult: 3.0,           
+        typ: 'O', seite: 'boese', kosten: 100, hp: 100, masse: 15, volumen: 3,          
+        schaden: 0, reichweite: 1, as: 4, critChance: 0.05, critMult: 3.0,           
         cooldown: 0, setup: 1, aoeBreit: 3, aoeTief: 1, moveWait: 5, moveTimer: 0,
         crowdFactor: 2, auraDruck: 0, position: feldLaenge - 1, einkommen: 2,
         metaWert: 5, spawnRate: 0.01, belagerung: 7,   
 	gebaeudeName: "Oger-Höhle", 
         beschreibung: "Beschwört einen gigantischen Titanen, der enorm viel Masse und Platz beansprucht."
+    },
+    hexer: {
+        typ: 'H', seite: 'boese', kosten: 120, hp: 8, masse: 1, volumen: 1,          
+        schaden: 0, reichweite: 4, as: 3, critChance: 0.15, critMult: 1.5,            
+        cooldown: 0, setup: 1, aoeBreit: 1, aoeTief: 1, moveWait: 4, moveTimer: 0, // AoE passen wir später per Code an!
+        crowdFactor: 1, auraDruck: 0, position: feldLaenge - 1, einkommen: 0.5, metaWert: 4, 
+        spawnRate: 0.02, belagerung: 2,
+        gebaeudeName: "Hexenturm",    
+        beschreibung: "Schießt Chaosblitze, die 3-5 zufällige Ziele gleichzeitig treffen."
+    },
+    daemon: {
+        typ: 'D', seite: 'boese', kosten: 450, hp: 180, masse: 15, volumen: 5, // Volumen 5!         
+        schaden: 20, reichweite: 2, as: 2.0, critChance: 0.20, critMult: 2.0, // Schneller AS (2.0)           
+        cooldown: 0, setup: 2, aoeBreit: 3, aoeTief: 3, moveWait: 4, moveTimer: 0, 
+        crowdFactor: 4, auraDruck: 4, position: feldLaenge - 1, einkommen: 0, metaWert: 10, 
+        spawnRate: 0.005, belagerung: 15,   
+        gebaeudeName: "Höllentor", 
+        beschreibung: "Ein gigantischer Erzdämon, der unfassbar schnell massiven Flächenschaden austeilt."
+    },
+    assasine: {
+        typ: 'A', seite: 'boese', kosten: 80, hp: 4, masse: 1, volumen: 1,          
+        schaden: 10, reichweite: 1, as: 1.5, critChance: 0.15, critMult: 2.0, // Hoher Schaden & Crit           
+        cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 1, moveWait: 1, moveTimer: 0, // Sehr schnell (moveWait 1)
+        crowdFactor: 1, auraDruck: -1, position: feldLaenge - 1, einkommen: 1.0, metaWert: 3, 
+        spawnRate: 0.03, belagerung: 0,   
+        gebaeudeName: "Assasinenversteck",
+	stealth: true, 
+        beschreibung: "Schleicht sich an der Front vorbei und meuchelt schwache Ziele im Hinterland."
+    },
+    werwolf: {
+        typ: 'W', seite: 'boese', kosten: 110, hp: 28, masse: 2, volumen: 1, 
+        schaden: 9, reichweite: 2, as: 2.0, critChance: 0.15, critMult: 1.5,
+        cooldown: 0, setup: 0, aoeBreit: 2, aoeTief: 1, moveWait: 2, moveTimer: 0,
+        crowdFactor: 1, auraDruck: 1, position: feldLaenge - 1, einkommen: 0.5, metaWert: 3,
+        spawnRate: 0.02, belagerung: 1,
+        gebaeudeName: "Wolfshöhle",
+        beschreibung: "Blutrünstige Bestie. Heilt sich bei jedem Treffer um 1 HP."
     }
 };
 
@@ -220,7 +272,7 @@ function autoSpawnEinheit(name) {
 }
 
 function verarbeiteKasernenProduktion() {
-    let units = ['ritter', 'bogenschuetze', 'priester', 'skelett', 'oger'];
+    let units = ['ritter', 'bogenschuetze', 'priester', 'kavallerie', 'lanzentraeger', 'artillerie', 'skelett', 'oger', 'hexer', 'daemon', 'assasine', 'werwolf'];
     
     for (let u of units) {
         let stats = einheitenStats[u];
@@ -243,11 +295,13 @@ function verarbeiteKasernenProduktion() {
 // START-ARMEE (Zum Testen & Balancen)
 // ==========================================
 // Hier kannst du die Anzahl der Start-Einheiten bequem einstellen:
-let startRitter = 5;
-let startBogenschuetzen = 1;
+let startRitter = 0;
+let startBogenschuetzen = 8;
 
-let startSkelette = 5;
-let startOger = 1;
+
+let startSkelette = 0;
+let startOger = 2;
+let startHexer = 0;
 
 // --- Spawn für "Die Guten" (Ganz links: Slot 0) ---
 for (let i = 0; i < startRitter; i++) {
@@ -264,6 +318,9 @@ for (let i = 0; i < startSkelette; i++) {
 for (let i = 0; i < startOger; i++) {
     schlachtfeld[feldLaenge - 1].push(erstelleEinheit('oger'));
 }
+for (let i = 0; i < startHexer; i++) {
+    schlachtfeld[feldLaenge - 1].push(erstelleEinheit('hexer'));
+}
 
 // ==========================================
 // 6. KAMPF, BEWEGUNG & HEILUNG
@@ -277,7 +334,7 @@ function bewegeEinheiten() {
             
             if (einheit.moveTimer > 0) einheit.moveTimer -= (1 + tempoBonus);
             if (einheit.cooldown > 0) einheit.cooldown -= (1 + tempoBonus);
-            einheit.hatAktionGemacht = false; // Neuer Marker: Hat die Einheit diese Runde schon gekämpft?
+            einheit.hatAktionGemacht = false; 
         }
     }
 
@@ -288,7 +345,7 @@ function bewegeEinheiten() {
     const SCHUB_SCHWELLE = 1.33; 
 
     // ==========================================
-    // PHASE 1: KAMPF & HEILUNG (Simultan!)
+    // PHASE 1: KAMPF & HEILUNG
     // ==========================================
     for (let r of richtungen) {
         for (let i = r.start; r.schritt === -1 ? i >= r.ende : i <= r.ende; i += r.schritt) {
@@ -302,22 +359,20 @@ function bewegeEinheiten() {
                         let checkIdx = i + (dist * r.zielMod);
                         if (checkIdx >= 0 && checkIdx < feldLaenge) {
                             if (schlachtfeld[checkIdx].some(e => e.seite === einheit.seite && e.hp > 0 && e.hp < (e.maxHp || 10))) {
-                                heilSlotIndex = checkIdx;
-                                break;
+                                heilSlotIndex = checkIdx; break;
                             }
                         }
                     }
 
                     if (heilSlotIndex !== -1) {
                         heileVerbuedete(einheit, heilSlotIndex);
-                        einheit.hatAktionGemacht = true; // Heiler blockiert Bewegung
+                        einheit.hatAktionGemacht = true; 
                     } else {
                         let feindInSicht = false;
                         for (let dist = 1; dist <= einheit.reichweite; dist++) {
                             let checkIdx = i + (dist * r.zielMod);
-                            if (checkIdx >= 0 && checkIdx < feldLaenge && schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0)) {
-                                feindInSicht = true;
-                                break;
+                            if (checkIdx >= 0 && checkIdx < feldLaenge && schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0 && !e.stealth)) {
+                                feindInSicht = true; break;
                             }
                         }
                         if (feindInSicht) {
@@ -329,15 +384,36 @@ function bewegeEinheiten() {
                     let gegnerSlotIndex = -1;
                     for (let dist = 0; dist <= einheit.reichweite; dist++) {
                         let checkIdx = i + (dist * r.zielMod);
-                        if (checkIdx >= 0 && checkIdx < feldLaenge && schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0)) {
-                            gegnerSlotIndex = checkIdx;
-                            break;
+                        if (checkIdx >= 0 && checkIdx < feldLaenge && schlachtfeld[checkIdx].some(e => e.seite !== einheit.seite && e.hp > 0 && !e.stealth)) {
+                            gegnerSlotIndex = checkIdx; break;
                         }
                     }
 
                     if (gegnerSlotIndex !== -1) {
-                        angriff(einheit, gegnerSlotIndex);
-                        einheit.hatAktionGemacht = true; // Angreifer blockiert Bewegung
+                        let willAngreifen = true;
+                        
+                        if (einheit.stealth) {
+                            let distZurFront = (einheit.seite === 'boese') ? (daten.frontGut - i) : (i - daten.frontBoese);
+                            let tiefereFeinde = false;
+                            for(let step = 1; step <= 2; step++) {
+                                let deepIdx = i + (step * r.zielMod);
+                                if (deepIdx >= 0 && deepIdx < feldLaenge && schlachtfeld[deepIdx].some(e => e.seite !== einheit.seite && e.hp > 0)) {
+                                    tiefereFeinde = true; break;
+                                }
+                            }
+
+                            if (distZurFront < 2 && tiefereFeinde) {
+                                willAngreifen = false; 
+                            } else {
+                                einheit.stealth = false; 
+                                zeigeNachricht("Ein Assasine durchbricht die Reihen!", "#aaa", "#8800ff");
+                            }
+                        }
+
+                        if (willAngreifen) {
+                            angriff(einheit, gegnerSlotIndex);
+                            einheit.hatAktionGemacht = true; 
+                        }
                     } else {
                         let distZurBasis = (einheit.seite === 'gut') ? ((feldLaenge - 1) - i) : (i - 0);
                         if (distZurBasis <= einheit.reichweite) {
@@ -345,6 +421,7 @@ function bewegeEinheiten() {
                                 if (einheit.seite === 'gut') daten.boese.hp -= einheit.schaden;
                                 else daten.gut.hp -= einheit.schaden;
                                 einheit.cooldown = einheit.as;
+                                einheit.stealth = false; 
                             }
                             einheit.moveTimer = 1;
                             einheit.hatAktionGemacht = true; 
@@ -356,16 +433,74 @@ function bewegeEinheiten() {
     }
 
     // ==========================================
-    // PHASE 2: BEWEGUNG & PHYSIK
+    // PHASE 2: GLOBALES FRONTLINIEN-SCHIEBEN (Formations-Push)
     // ==========================================
-    // Erst jetzt darf sich bewegen, wer noch nicht gekämpft hat!
+    for (let i = 1; i < feldLaenge - 2; i++) {
+        let slotLinks = schlachtfeld[i];
+        let slotRechts = schlachtfeld[i+1];
+        
+        let hatGut = slotLinks.some(e => e.seite === 'gut' && e.hp > 0 && !e.stealth);
+        let hatBoese = slotRechts.some(e => e.seite === 'boese' && e.hp > 0 && !e.stealth);
+        
+        if (hatGut && hatBoese) {
+            let masseGutGesamt = 0;
+            let guteReihen = [ { idx: i, faktor: 1.0 }, { idx: i - 1, faktor: 0.5 }, { idx: i - 2, faktor: 0.25 } ];
+            for (let reihe of guteReihen) {
+                if (reihe.idx >= 0) masseGutGesamt += schlachtfeld[reihe.idx].filter(e => e.seite === 'gut' && e.hp > 0).reduce((sum, e) => sum + (e.masse || 1), 0) * reihe.faktor;
+            }
+
+            let masseBoeseGesamt = 0;
+            let boeseReihen = [ { idx: i + 1, faktor: 1.0 }, { idx: i + 2, faktor: 0.5 }, { idx: i + 3, faktor: 0.25 } ];
+            for (let reihe of boeseReihen) {
+                if (reihe.idx < feldLaenge) masseBoeseGesamt += schlachtfeld[reihe.idx].filter(e => e.seite === 'boese' && e.hp > 0).reduce((sum, e) => sum + (e.masse || 1), 0) * reihe.faktor;
+            }
+
+            let masseGutBereit = 0;
+            for (let reihe of guteReihen) {
+                if (reihe.idx >= 0) masseGutBereit += schlachtfeld[reihe.idx].filter(e => e.seite === 'gut' && e.hp > 0 && e.moveTimer <= 0).reduce((sum, e) => sum + (e.masse || 1), 0) * reihe.faktor;
+            }
+
+            let masseBoeseBereit = 0;
+            for (let reihe of boeseReihen) {
+                if (reihe.idx < feldLaenge) masseBoeseBereit += schlachtfeld[reihe.idx].filter(e => e.seite === 'boese' && e.hp > 0 && e.moveTimer <= 0).reduce((sum, e) => sum + (e.masse || 1), 0) * reihe.faktor;
+            }
+            
+            if (masseGutBereit >= (masseBoeseGesamt * SCHUB_SCHWELLE)) {
+                dominoSchieben(i + 1, 1); 
+                let vorrueckendeGute = schlachtfeld[i].filter(e => e.seite === 'gut');
+                schlachtfeld[i] = schlachtfeld[i].filter(e => e.seite !== 'gut');
+                schlachtfeld[i+1].push(...vorrueckendeGute);
+                
+                for (let e of vorrueckendeGute) {
+                    e.moveTimer = (e.moveWait || 2);
+                    e.frischBewegt = true; 
+                }
+                break; 
+            } 
+            else if (masseBoeseBereit >= (masseGutGesamt * SCHUB_SCHWELLE)) {
+                dominoSchieben(i, -1); 
+                let vorrueckendeBoese = schlachtfeld[i+1].filter(e => e.seite === 'boese');
+                schlachtfeld[i+1] = schlachtfeld[i+1].filter(e => e.seite !== 'boese');
+                schlachtfeld[i].push(...vorrueckendeBoese);
+                
+                for (let e of vorrueckendeBoese) {
+                    e.moveTimer = (e.moveWait || 2);
+                    e.frischBewegt = true; 
+                }
+                break; 
+            }
+        }
+    } // <-- HIER WAREN DIE FEHLENDEN KLAMMERN!
+
+    // ==========================================
+    // PHASE 3: NORMALE BEWEGUNG (In leere Slots laufen)
+    // ==========================================
     for (let r of richtungen) {
         for (let i = r.start; r.schritt === -1 ? i >= r.ende : i <= r.ende; i += r.schritt) {
             for (let j = schlachtfeld[i].length - 1; j >= 0; j--) {
                 let einheit = schlachtfeld[i][j];
                 if (einheit.seite !== r.seite) continue;
-
-                // Wer gekämpft hat oder blockiert ist, bleibt stehen!
+                
                 if (einheit.hatAktionGemacht || einheit.moveTimer > 0) continue; 
 
                 let zielIdx = i + r.zielMod;
@@ -373,35 +508,34 @@ function bewegeEinheiten() {
                     let zielSlot = schlachtfeld[zielIdx];
                     let feindImZiel = zielSlot.some(e => e.seite !== einheit.seite && e.hp > 0);
 
-                    if (feindImZiel) {
-                        let masseEigene = 0;
-                        let eigeneReihen = [ { idx: i, faktor: 1.0 }, { idx: i - r.zielMod, faktor: 0.5 }, { idx: i - (r.zielMod * 2), faktor: 0.25 } ];
-                        for (let reihe of eigeneReihen) {
-                            if (reihe.idx >= 0 && reihe.idx < feldLaenge) {
-                                masseEigene += schlachtfeld[reihe.idx].filter(e => e.seite === einheit.seite && e.hp > 0).reduce((sum, e) => sum + (e.masse || 1), 0) * reihe.faktor;
-                            }
-                        }
-
-                        let masseFeind = 0;
-                        let feindReihen = [ { idx: zielIdx, faktor: 1.0 }, { idx: zielIdx + r.zielMod, faktor: 0.5 }, { idx: zielIdx + (r.zielMod * 2), faktor: 0.25 } ];
-                        for (let reihe of feindReihen) {
-                            if (reihe.idx >= 0 && reihe.idx < feldLaenge) {
-                                masseFeind += schlachtfeld[reihe.idx].filter(e => e.seite !== einheit.seite && e.hp > 0).reduce((sum, e) => sum + (e.masse || 1), 0) * reihe.faktor;
-                            }
-                        }
-                        
-                        if (masseEigene >= (masseFeind * SCHUB_SCHWELLE)) {
-                            dominoSchieben(zielIdx, r.zielMod);
+                    if (feindImZiel && !einheit.stealth) {
+                        einheit.moveTimer = 1; 
+                    } 
+                    else {
+                        if (getSlotVolumen(zielSlot) + (einheit.volumen || 1) <= maxSlotVolumen) {
                             schlachtfeld[i].splice(j, 1);
                             zielSlot.push(einheit);
                             einheit.moveTimer = (einheit.moveWait || 2);
-                        } else {
-                            einheit.moveTimer = 1; 
+                            einheit.frischBewegt = true; 
+                        } 
+                        else {
+                            let sprungIdx = zielIdx + r.zielMod;
+                            if (sprungIdx >= 1 && sprungIdx <= feldLaenge - 2) {
+                                let sprungSlot = schlachtfeld[sprungIdx];
+                                let feindImSprung = sprungSlot.some(e => e.seite !== einheit.seite && e.hp > 0);
+                                
+                                if ((!feindImSprung || einheit.stealth) && getSlotVolumen(sprungSlot) + (einheit.volumen || 1) <= maxSlotVolumen) {
+                                    schlachtfeld[i].splice(j, 1);
+                                    sprungSlot.push(einheit);
+                                    einheit.moveTimer = (einheit.moveWait || 2) * (einheit.crowdFactor || 2);
+                                    einheit.frischBewegt = true; 
+                                } else {
+                                    einheit.moveTimer = 1; 
+                                }
+                            } else {
+                                einheit.moveTimer = 1; 
+                            }
                         }
-                    } else if (getSlotVolumen(zielSlot) + (einheit.volumen || 1) <= maxSlotVolumen) {
-                        schlachtfeld[i].splice(j, 1);
-                        zielSlot.push(einheit);
-                        einheit.moveTimer = (einheit.moveWait || 2);
                     }
                 }
             }
@@ -452,50 +586,111 @@ function heileVerbuedete(heiler, zielSlotIndex) {
 function angriff(angreifer, zielSlotIndex) {
     if (angreifer.cooldown > 0) return;
 
+    // ==========================================
+    // SETUP-MECHANIK
+    // ==========================================
+    if (angreifer.frischBewegt) {
+        angreifer.frischBewegt = false; 
+        
+        if (angreifer.setup > 0) {
+            angreifer.cooldown = angreifer.setup; 
+            return; 
+        }
+    }
+
     let richtung = angreifer.seite === 'gut' ? 1 : -1;
     let angriffErfolgreich = false;
 
-    // --- MOMENTUM BERECHNUNG ---
     let mom = daten[angreifer.seite].momentum;
-    let dmgMulti = 1 + (mom * 0.1); // 10% pro Stufe
+    let dmgMulti = 1 + (mom * 0.1); 
 
-    for (let t = 0; t < angreifer.aoeTief; t++) {
-        let aktuellerSlotIndex = zielSlotIndex + (t * richtung);
-
-        if (aktuellerSlotIndex >= 0 && aktuellerSlotIndex < feldLaenge) {
-            let slot = schlachtfeld[aktuellerSlotIndex];
-            let trefferZaehler = 0;
-            
-            for (let e = slot.length - 1; e >= 0; e--) {
-                let opfer = slot[e];
-
-                if (opfer.seite !== angreifer.seite && opfer.hp > 0) {
-                    // --- CRIT BERECHNUNG ---
-                    let critBonus = mom >= 2 ? (mom - 1) * 0.05 : 0;
-                    let chance = (angreifer.critChance || 0.05) + critBonus; 
-                    let isCrit = Math.random() < chance;
-                    
-                    // Hier berechnen wir den Schaden WIRKLICH
-                    let finalerSchaden = angreifer.schaden * dmgMulti;
-                    
-                    if (isCrit) {
-                        finalerSchaden *= (angreifer.critMult || 2.0);
+    if (angreifer.typ === 'H') {
+        let alleZiele = [];
+        
+        for (let t = 0; t < angreifer.reichweite; t++) {
+            let sIdx = zielSlotIndex + (t * richtung);
+            if (sIdx >= 0 && sIdx < feldLaenge) {
+                let slot = schlachtfeld[sIdx];
+                for (let e = 0; e < slot.length; e++) {
+                    if (slot[e].seite !== angreifer.seite && slot[e].hp > 0) {
+                        alleZiele.push({ opfer: slot[e], sIdx: sIdx, ebene: e });
                     }
+                }
+            }
+        }
+        
+        if (alleZiele.length > 0) {
+            alleZiele.sort(() => Math.random() - 0.5);
+            let trefferZahl = Math.floor(Math.random() * 3) + 3; 
+            let ausgewaehlteZiele = alleZiele.slice(0, trefferZahl);
+            
+            for (let ziel of ausgewaehlteZiele) {
+                let critBonus = mom >= 2 ? (mom - 1) * 0.05 : 0;
+                let chance = (angreifer.critChance || 0.05) + critBonus; 
+                let isCrit = Math.random() < chance;
+                
+                let finalerSchaden = angreifer.schaden * dmgMulti;
+                if (isCrit) finalerSchaden *= (angreifer.critMult || 2.0);
+                
+                ziel.opfer.hp -= finalerSchaden;
+                ziel.opfer.wurdeGetroffen = true; 
+                
+                zeigeSchaden(finalerSchaden, ziel.sIdx, angreifer.seite, ziel.ebene, isCrit);
+                angriffErfolgreich = true;
+            }
+        }
+    } 
+    else {
+        for (let t = 0; t < angreifer.aoeTief; t++) {
+            let aktuellerSlotIndex = zielSlotIndex + (t * richtung);
 
-                    // Schadens-Anwendung
-                    opfer.hp -= finalerSchaden;
-                    opfer.wurdeGetroffen = true; 
-                    
-                    zeigeSchaden(finalerSchaden, aktuellerSlotIndex, angreifer.seite, e, isCrit);
-                    trefferZaehler++;
-                    angriffErfolgreich = true;
+            if (aktuellerSlotIndex >= 0 && aktuellerSlotIndex < feldLaenge) {
+                let slot = schlachtfeld[aktuellerSlotIndex];
+                let trefferZaehler = 0;
+                
+                for (let e = slot.length - 1; e >= 0; e--) {
+                    let opfer = slot[e];
 
-                    if (trefferZaehler >= angreifer.aoeBreit) break;
+                    if (opfer.seite !== angreifer.seite && opfer.hp > 0) {
+                        let critBonus = mom >= 2 ? (mom - 1) * 0.05 : 0;
+                        let chance = (angreifer.critChance || 0.05) + critBonus; 
+                        let isCrit = Math.random() < chance;
+                        
+                        let finalerSchaden = angreifer.schaden * dmgMulti;
+                        
+                        if (isCrit) finalerSchaden *= (angreifer.critMult || 2.0);
+
+                        opfer.hp -= finalerSchaden;
+                        opfer.wurdeGetroffen = true; 
+                        
+                        zeigeSchaden(finalerSchaden, aktuellerSlotIndex, angreifer.seite, e, isCrit);
+                        trefferZaehler++;
+                        angriffErfolgreich = true;
+
+                        if (angreifer.typ === 'W') {
+                            let maxHp = angreifer.maxHp || 28; 
+                            if (angreifer.hp < maxHp) {
+                                angreifer.hp = Math.min(maxHp, angreifer.hp + 1);
+                                
+                                let wSlot = -1;
+                                let wEbene = -1;
+                                for(let f = 0; f < feldLaenge; f++) {
+                                    let idx = schlachtfeld[f].indexOf(angreifer);
+                                    if(idx !== -1) { wSlot = f; wEbene = idx; break; }
+                                }
+                                if(wSlot !== -1) {
+                                    zeigeHeilung(1, wSlot, angreifer.seite, wEbene, false);
+                                }
+                            }
+                        }
+
+                        if (trefferZaehler >= (angreifer.aoeBreit || 1)) break;
+                    }
                 }
             }
         }
     }
-    // Setze Cooldown nur, wenn wirklich ein Angriff stattfand
+
     if (angriffErfolgreich) angreifer.cooldown = angreifer.as;
 }
 
@@ -618,8 +813,14 @@ function berechneFrontlinie() {
 
     let frontMitte = (maxGut + minBoese) / 2;
     frontMitte += (auraDruckGut - auraDruckBoese);
+
     daten.balance = Math.max(0, Math.min(100, (frontMitte / (feldLaenge - 1)) * 100)); 
+    
+    // NEU: Wir merken uns die Front für die Stealth-Mechanik
+    daten.frontGut = maxGut;
+    daten.frontBoese = minBoese;
 }
+
 
 // --- NEU: EVENT NACHRICHTEN SENDEN ---
 function zeigeNachricht(text, farbe = "#ddd", rahmenFarbe = "#55aaff") {
@@ -740,7 +941,7 @@ function updateUI() {
 
             if (e.wurdeGetroffen) { punkt.classList.add('hit-flash'); e.wurdeGetroffen = false; }
             punkt.style.opacity = Math.max(0.25, (e.hp || 10) / (e.maxHp || 10));
-            punkt.innerText = e.typ ? e.typ.charAt(0).toUpperCase() : "?";
+            punkt.innerText = e.typ ? e.typ.substring(0, 2).toUpperCase() : "?";
             punkt.style.color = (e.seite === 'gut') ? '#55aaff' : '#ff5555';
             punkt.style.fontWeight = "bold";
 
@@ -782,7 +983,7 @@ function updateUI() {
             </span>`;
     }
 
-    ['ritter', 'bogenschuetze', 'priester'].forEach(u => {
+    ['ritter', 'bogenschuetze', 'priester', 'kavallerie', 'lanzentraeger', 'artillerie'].forEach(u => {
         let btn = document.getElementById('btn-' + u);
         if (btn) btn.disabled = (daten.gut.res < getKosten(u));
         
@@ -795,7 +996,7 @@ function updateUI() {
         if (tt) tt.innerHTML = generiereTooltip(einheitenStats[u]);
     });
 
-    ['skelett', 'oger'].forEach(u => {
+    ['skelett', 'oger', 'hexer', 'daemon', 'assasine', 'werwolf'].forEach(u => {
         let btn = document.getElementById('btn-' + u);
         if (btn) btn.disabled = (daten.boese.res < getKosten(u));
         
@@ -916,20 +1117,30 @@ setInterval(() => {
         checkGameOver();
     }
 }, 1000);
+
+
 // ==========================================
 // 10. STEUERUNG (HOTKEYS)
 // ==========================================
 window.addEventListener('keydown', function(event) {
     switch(event.key.toUpperCase()) {
+        // Gut
         case 'Q': kaufeKaserne('ritter'); break;
         case 'W': kaufeKaserne('bogenschuetze'); break;
         case 'E': kaufeKaserne('priester'); break; 
+        case 'R': kaufeKaserne('kavallerie'); break; 
+        case 'T': kaufeKaserne('lanzentraeger'); break; 
+        case 'Z': kaufeKaserne('artillerie'); break; // Nutze 'Y' falls du ein englisches Layout bevorzugst
+
+        // Böse
         case 'I': kaufeKaserne('skelett'); break;
         case 'O': kaufeKaserne('oger'); break;
+        case 'P': kaufeKaserne('hexer'); break;
+        case 'K': kaufeKaserne('daemon'); break;
+        case 'L': kaufeKaserne('assasine'); break;
+	case 'J': kaufeKaserne('werwolf'); break;
     }
 });
-
-
 
 
 
