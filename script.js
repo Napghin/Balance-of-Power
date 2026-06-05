@@ -150,8 +150,8 @@ const einheitenStats = {
     },
 	kavallerie: {
         typ: 'K', seite: 'gut', kosten: 125, hp: 57, masse: 4, volumen: 2, 
-        schaden: 12, reichweite: 1, as: 2.5, critChance: 0.1, critMult: 2.0,
-        cooldown: 0, setup: 1, aoeBreit: 2, aoeTief: 1, moveWait: 2, moveTimer: 0, // moveWait 2 = sehr schnell
+        schaden: 12, reichweite: 1, as: 3, critChance: 0.1, critMult: 2.0,
+        cooldown: 0, setup: 0, aoeBreit: 2, aoeTief: 1, moveWait: 2, moveTimer: 0, // moveWait 2 = sehr schnell
         crowdFactor: 2, auraDruck: 1, position: 0, einkommen: 1.0, metaWert: 11,
         spawnRate: 0.01, belagerung: 3,
         gebaeudeName: "Stall",
@@ -187,7 +187,7 @@ const einheitenStats = {
     oger: {
         typ: 'O', seite: 'boese', kosten: 150, hp: 100, masse: 15, volumen: 3,          
         schaden: 11, reichweite: 1, as: 5, critChance: 0.05, critMult: 3.0,           
-        cooldown: 0, setup: 3, aoeBreit: 3, aoeTief: 1, moveWait: 5, moveTimer: 0,
+        cooldown: 0, setup: 0, aoeBreit: 3, aoeTief: 1, moveWait: 5, moveTimer: 0,
         crowdFactor: 2, auraDruck: 0, position: feldLaenge - 1, einkommen: 2,
         metaWert: 15, spawnRate: 0.008, belagerung: 5,   
 	gebaeudeName: "Oger-Höhle", 
@@ -205,7 +205,7 @@ const einheitenStats = {
     daemon: {
         typ: 'D', seite: 'boese', kosten: 450, hp: 180, masse: 15, volumen: 5, // Volumen 5!         
         schaden: 6, reichweite: 2, as: 2.0, critChance: 0.1, critMult: 2.0, // Schneller AS (2.0)           
-        cooldown: 0, setup: 2, aoeBreit: 3, aoeTief: 1, moveWait: 4, moveTimer: 0, 
+        cooldown: 0, setup: 1, aoeBreit: 3, aoeTief: 1, moveWait: 4, moveTimer: 0, 
         crowdFactor: 4, auraDruck: 4, position: feldLaenge - 1, einkommen: 2.5, metaWert: 50, 
         spawnRate: 0.0035, belagerung: 15,   
         gebaeudeName: "Höllentor", 
@@ -307,7 +307,7 @@ let configGut = {
     bogenschuetze:   { fest: 1, min: 1, max: 3 },
     lanzentraeger:   { fest: 1, min: 0, max: 2 },
     priester:        { fest: 1, min: 0, max: 1 },
-    kavallerie:      { fest: 1, min: 0, max: 2 },
+    kavallerie:      { fest: 1, min: 0, max: 1 },
     artillerie:      { fest: 1, min: 0, max: 1 }
 };
 
