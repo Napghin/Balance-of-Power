@@ -123,110 +123,110 @@ function erstelleEinheit(name) {
 const einheitenStats = {
     ritter: {
         typ: 'R', seite: 'gut', kosten: 40, hp: 14, masse: 2, volumen: 1,
-        schaden: 7, reichweite: 1, as: 3, critChance: 0.1, critMult: 2.0,
+        schaden: 6, reichweite: 1, as: 3, critChance: 0.1, critMult: 2.0,
         cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 1, moveWait: 4, moveTimer: 0,
-        crowdFactor: 2, auraDruck: 0, position: 0, einkommen: 0.5, metaWert: 2,
+        crowdFactor: 2, auraDruck: 0, position: 0, einkommen: 0.4, metaWert: 2.5,
         spawnRate: 0.03, belagerung: 2,
 	gebaeudeName: "Ritterburg",
         beschreibung: "Baut eine Kaserne, die stetig schwere Nahkämpfer produziert."
     },
     bogenschuetze: {
-        typ: 'B', seite: 'gut', kosten: 50, hp: 6, masse: 1, volumen: 1, 
-        schaden: 3, reichweite: 4, as: 1.5, critChance: 0.15, critMult: 1.5,
-        cooldown: 0, setup: 2, aoeBreit: 1, aoeTief: 1, moveWait: 5, moveTimer: 0,
-        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.25, metaWert: 2,
-        spawnRate: 0.025, belagerung: 1,
+        typ: 'B', seite: 'gut', kosten: 60, hp: 6, masse: 1, volumen: 1, 
+        schaden: 4, reichweite: 4, as: 1.5, critChance: 0.15, critMult: 1.5,
+        cooldown: 0, setup: 3, aoeBreit: 1, aoeTief: 1, moveWait: 5, moveTimer: 0,
+        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.3, metaWert: 4,
+        spawnRate: 0.02, belagerung: 1,
 	gebaeudeName: "Schießstand",
         beschreibung: "Errichtet einen Schießstand für Fernkämpfer."
     },
     priester: {
         typ: 'P', seite: 'gut', kosten: 80, hp: 10, masse: 1, volumen: 1,          
-        schaden: 0, heilung: 3, reichweite: 3, as: 3, critChance: 0.10, critMult: 1.5,           
-        cooldown: 0, setup: 1, aoeBreit: 5, aoeTief: 1, moveWait: 3, moveTimer: 0,
-        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.3, metaWert: 3, 
+        schaden: 0, heilung: 3, reichweite: 3, as: 3, critChance: 0.15, critMult: 1.5,           
+        cooldown: 0, setup: 2, aoeBreit: 5, aoeTief: 1, moveWait: 3, moveTimer: 0,
+        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.9, metaWert: 5, 
         spawnRate: 0.015, belagerung: 0,
 	gebaeudeName: "Kloster",    
         beschreibung: "Nutzt göttliche Magie, um Verbündete an der Front zu heilen."
     },
 	kavallerie: {
-        typ: 'K', seite: 'gut', kosten: 150, hp: 40, masse: 4, volumen: 2, 
-        schaden: 12, reichweite: 1, as: 2.5, critChance: 0.15, critMult: 2.0,
+        typ: 'K', seite: 'gut', kosten: 125, hp: 57, masse: 4, volumen: 2, 
+        schaden: 12, reichweite: 1, as: 2.5, critChance: 0.1, critMult: 2.0,
         cooldown: 0, setup: 1, aoeBreit: 2, aoeTief: 1, moveWait: 2, moveTimer: 0, // moveWait 2 = sehr schnell
-        crowdFactor: 2, auraDruck: 1, position: 0, einkommen: 1.0, metaWert: 4,
-        spawnRate: 0.02, belagerung: 3,
+        crowdFactor: 2, auraDruck: 1, position: 0, einkommen: 1.0, metaWert: 11,
+        spawnRate: 0.01, belagerung: 3,
         gebaeudeName: "Stall",
         beschreibung: "Schwere Kavallerie. Extrem schnell, drückt die Front massiv nach vorn."
     },
     lanzentraeger: {
-        typ: 'L', seite: 'gut', kosten: 60, hp: 12, masse: 2, volumen: 1, 
-        schaden: 7, reichweite: 2, as: 5, critChance: 0.1, critMult: 2.0, // Reichweite 2!
+        typ: 'L', seite: 'gut', kosten: 75, hp: 12, masse: 2, volumen: 1, 
+        schaden: 7, reichweite: 2, as: 5, critChance: 0.1, critMult: 2.0, 
         cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 2, moveWait: 4, moveTimer: 0,
-        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.4, metaWert: 2,
-        spawnRate: 0.015, belagerung: 1, // Langsamerer Spawn als Ritter (0.015 statt 0.03)
+        crowdFactor: 1, auraDruck: 0, position: 0, einkommen: 0.4, metaWert: 7,
+        spawnRate: 0.014, belagerung: 1, 
         gebaeudeName: "Kaserne",
         beschreibung: "Nahkämpfer mit Piken. Können sicher aus der zweiten Reihe angreifen."
     },
     artillerie: {
         typ: 'A', seite: 'gut', kosten: 250, hp: 20, masse: 4, volumen: 3, 
-        schaden: 18, reichweite: 5, as: 6, critChance: 0.1, critMult: 2.0, // Hohe RW, langsamer AS
-        cooldown: 0, setup: 3, aoeBreit: 3, aoeTief: 3, moveWait: 6, moveTimer: 0, // Massive AoE
-        crowdFactor: 1, auraDruck: 1, position: 0, einkommen: 0, metaWert: 5,
+        schaden: 18, reichweite: 5, as: 7, critChance: 0.05, critMult: 3.0, 
+        cooldown: 0, setup: 8, aoeBreit: 3, aoeTief: 3, moveWait: 6, moveTimer: 0, 
+        crowdFactor: 2, auraDruck: 1, position: 0, einkommen: 0.5, metaWert: 30,
         spawnRate: 0.01, belagerung: 10,
         gebaeudeName: "Belagerungswerkstatt",
         beschreibung: "Sperrig und langsam, aber schießt massive AoE-Geschosse über das halbe Feld."
     },
     skelett: {
-        typ: 'S', seite: 'boese', kosten: 40, hp: 13, masse: 1, volumen: 1, 
-        schaden: 5, reichweite: 1, as: 2, critChance: 0.05, critMult: 2.0,        
+        typ: 'S', seite: 'boese', kosten: 40, hp: 10, masse: 1, volumen: 1, 
+        schaden: 4, reichweite: 1, as: 2, critChance: 0.1, critMult: 2.0,        
         cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 1, moveWait: 2, moveTimer: 0,
-        crowdFactor: 1, auraDruck: 0, position: feldLaenge - 1, einkommen: 0.5,
-        metaWert: 2, spawnRate: 0.05, belagerung: 2,
+        crowdFactor: 1, auraDruck: 0, position: feldLaenge - 1, einkommen: 0.4,
+        metaWert: 2, spawnRate: 0.04, belagerung: 2,
 	gebaeudeName: "Skelett-Friedhof",
         beschreibung: "Erweckt stetig billige Krieger aus dem verseuchten Boden."
     },
     oger: {
-        typ: 'O', seite: 'boese', kosten: 100, hp: 100, masse: 15, volumen: 3,          
-        schaden: 13, reichweite: 1, as: 4, critChance: 0.05, critMult: 3.0,           
-        cooldown: 0, setup: 1, aoeBreit: 3, aoeTief: 1, moveWait: 5, moveTimer: 0,
+        typ: 'O', seite: 'boese', kosten: 150, hp: 100, masse: 15, volumen: 3,          
+        schaden: 11, reichweite: 1, as: 5, critChance: 0.05, critMult: 3.0,           
+        cooldown: 0, setup: 3, aoeBreit: 3, aoeTief: 1, moveWait: 5, moveTimer: 0,
         crowdFactor: 2, auraDruck: 0, position: feldLaenge - 1, einkommen: 2,
-        metaWert: 5, spawnRate: 0.01, belagerung: 7,   
+        metaWert: 15, spawnRate: 0.008, belagerung: 5,   
 	gebaeudeName: "Oger-Höhle", 
         beschreibung: "Beschwört einen gigantischen Titanen, der enorm viel Masse und Platz beansprucht."
     },
     hexer: {
-        typ: 'H', seite: 'boese', kosten: 120, hp: 8, masse: 1, volumen: 1,          
-        schaden: 0, reichweite: 4, as: 3, critChance: 0.15, critMult: 1.5,            
+        typ: 'H', seite: 'boese', kosten: 66, hp: 8, masse: 1, volumen: 1,          
+        schaden: 3, reichweite: 4, as: 2.5, critChance: 0.15, critMult: 1.5,            
         cooldown: 0, setup: 1, aoeBreit: 1, aoeTief: 1, moveWait: 4, moveTimer: 0, // AoE passen wir später per Code an!
-        crowdFactor: 1, auraDruck: 0, position: feldLaenge - 1, einkommen: 0.5, metaWert: 4, 
-        spawnRate: 0.02, belagerung: 2,
+        crowdFactor: 1, auraDruck: 0, position: feldLaenge - 1, einkommen: 0.5, metaWert: 6.6, 
+        spawnRate: 0.0015, belagerung: 2,
         gebaeudeName: "Hexenturm",    
         beschreibung: "Schießt Chaosblitze, die 3-5 zufällige Ziele gleichzeitig treffen."
     },
     daemon: {
         typ: 'D', seite: 'boese', kosten: 450, hp: 180, masse: 15, volumen: 5, // Volumen 5!         
-        schaden: 6, reichweite: 2, as: 2.0, critChance: 0.20, critMult: 2.0, // Schneller AS (2.0)           
+        schaden: 6, reichweite: 2, as: 2.0, critChance: 0.1, critMult: 2.0, // Schneller AS (2.0)           
         cooldown: 0, setup: 2, aoeBreit: 3, aoeTief: 1, moveWait: 4, moveTimer: 0, 
-        crowdFactor: 4, auraDruck: 4, position: feldLaenge - 1, einkommen: 0, metaWert: 10, 
-        spawnRate: 0.005, belagerung: 15,   
+        crowdFactor: 4, auraDruck: 4, position: feldLaenge - 1, einkommen: 2.5, metaWert: 50, 
+        spawnRate: 0.0035, belagerung: 15,   
         gebaeudeName: "Höllentor", 
         beschreibung: "Ein gigantischer Erzdämon, der unfassbar schnell massiven Flächenschaden austeilt."
     },
     assasine: {
-        typ: 'A', seite: 'boese', kosten: 80, hp: 4, masse: 1, volumen: 1,          
+        typ: 'A', seite: 'boese', kosten: 80, hp: 6, masse: 1, volumen: 1,          
         schaden: 10, reichweite: 1, as: 1.5, critChance: 0.15, critMult: 2.0, // Hoher Schaden & Crit           
-        cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 1, moveWait: 1, moveTimer: 0, // Sehr schnell (moveWait 1)
-        crowdFactor: 1, auraDruck: -1, position: feldLaenge - 1, einkommen: 1.0, metaWert: 3, 
-        spawnRate: 0.03, belagerung: 0,   
+        cooldown: 0, setup: 0, aoeBreit: 1, aoeTief: 1, moveWait: 2, moveTimer: 0, 
+        crowdFactor: 1, auraDruck: -1, position: feldLaenge - 1, einkommen: 0.3, metaWert: 7, 
+        spawnRate: 0.009, belagerung: 0,   
         gebaeudeName: "Assasinenversteck",
 	stealth: true, 
         beschreibung: "Schleicht sich an der Front vorbei und meuchelt schwache Ziele im Hinterland."
     },
     werwolf: {
-        typ: 'W', seite: 'boese', kosten: 110, hp: 28, masse: 2, volumen: 1, 
-        schaden: 9, reichweite: 2, as: 2.0, critChance: 0.15, critMult: 1.5,
-        cooldown: 0, setup: 0, aoeBreit: 2, aoeTief: 1, moveWait: 2, moveTimer: 0,
-        crowdFactor: 1, auraDruck: 1, position: feldLaenge - 1, einkommen: 0.5, metaWert: 3,
-        spawnRate: 0.02, belagerung: 1,
+        typ: 'W', seite: 'boese', kosten: 100, hp: 18, masse: 3.5, volumen: 1, 
+        schaden: 7, reichweite: 2, as: 4.0, critChance: 0.1, critMult: 2,
+        cooldown: 0, setup: 0, aoeBreit: 2, aoeTief: 1, moveWait: 3, moveTimer: 0,
+        crowdFactor: 1, auraDruck: 1, position: feldLaenge - 1, einkommen: 0.8, metaWert: 8,
+        spawnRate: 0.014, belagerung: 3,
         gebaeudeName: "Wolfshöhle",
         beschreibung: "Blutrünstige Bestie. Heilt sich bei jedem Treffer um 1 HP."
     }
@@ -303,8 +303,8 @@ let maxAbweichungProzent = 50;
 
 // --- Konfiguration "Die Guten" ---
 let configGut = {
-    ritter:          { fest: 1, min: 0, max: 4 },
-    bogenschuetze:   { fest: 1, min: 0, max: 3 },
+    ritter:          { fest: 1, min: 2, max: 4 },
+    bogenschuetze:   { fest: 1, min: 1, max: 3 },
     lanzentraeger:   { fest: 1, min: 0, max: 2 },
     priester:        { fest: 1, min: 0, max: 1 },
     kavallerie:      { fest: 1, min: 0, max: 2 },
@@ -313,7 +313,7 @@ let configGut = {
 
 // --- Konfiguration "Die Bösen" ---
 let configBoese = {
-    skelett:         { fest: 1, min: 0, max: 4 },
+    skelett:         { fest: 1, min: 2, max: 6 },
     oger:            { fest: 1, min: 0, max: 1 },
     hexer:           { fest: 1, min: 0, max: 2 },
     werwolf:         { fest: 1, min: 0, max: 2 },
